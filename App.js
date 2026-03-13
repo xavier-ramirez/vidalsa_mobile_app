@@ -8,8 +8,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SQLite from 'expo-sqlite';
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
-// IP de tu servidor Laravel (ejecutado con: php artisan serve --host=0.0.0.0)
-const API_BASE = 'http://192.168.250.4:8000/api/mobile';
+// La IP se guarda en el teléfono y se puede cambiar desde la app.
+// Por defecto intenta con la IP conocida del servidor.
+const DEFAULT_IP = '192.168.250.4:8000';
+
+async function getApiBase() {
+  const saved = await AsyncStorage.getItem('server_ip');
+  const ip = (saved && saved.trim()) ? saved.trim() : DEFAULT_IP;
+  // Asegurar que tenga protocolo y el path de la API
+  const base = ip.startsWith('http') ? ip : `http://${ip}`;
+  return `${base}/api/mobile`;
+}
 
 // ─── COLORES ──────────────────────────────────────────────────────────────────
 const C = {
@@ -181,12 +190,13 @@ async function leerUltimaSincronizacion() {
 
 // ─── API HELPER ───────────────────────────────────────────────────────────────
 async function api(method, path, body = null) {
+  const apiBase = await getApiBase();
   const token = await AsyncStorage.getItem('token');
   const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`${API_BASE}${path}`, opts);
+  const res = await fetch(`${apiBase}${path}`, opts);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || data.message || `Error ${res.status}`);
   return data;
@@ -200,6 +210,8 @@ function PantallaLogin({ onLogin }) {
   const [descargando, setDescargando] = useState(false);
   const [ultimaSync, setUltimaSync] = useState('');
   const [conteoLocal, setConteoLocal] = useState(0);
+  const [serverIp, setServerIp] = useState('');
+  const [mostrarIp, setMostrarIp] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -210,8 +222,21 @@ function PantallaLogin({ onLogin }) {
       }
       const equipos = await leerEquiposLocal();
       setConteoLocal(equipos.length);
+      // Cargar IP guardada
+      const ip = await AsyncStorage.getItem('server_ip');
+      if (ip) setServerIp(ip);
+      else setServerIp(DEFAULT_IP);
     })();
   }, []);
+
+  const guardarIp = async () => {
+    const ipLimpia = serverIp.trim().replace(/\/+$/, ''); // quitar barra final
+    if (!ipLimpia) { Alert.alert('Error', 'Escribe una IP o dirección válida.'); return; }
+    await AsyncStorage.setItem('server_ip', ipLimpia);
+    setMostrarIp(false);
+    Alert.alert('✅ Guardado', `Servidor configurado: ${ipLimpia}\n\nAhora intenta descargar los datos.`);
+  };
+
 
   const descargarDatos = async () => {
     setDescargando(true);
@@ -289,6 +314,30 @@ function PantallaLogin({ onLogin }) {
             <View style={styles.syncInfoBox}>
               <Text style={styles.syncInfoText}>✅ {conteoLocal} equipos guardados localmente</Text>
               {ultimaSync ? <Text style={styles.syncInfoDate}>Última descarga: {ultimaSync}</Text> : null}
+            </View>
+          )}
+
+          {/* Campo de IP del Servidor */}
+          <TouchableOpacity onPress={() => setMostrarIp(!mostrarIp)} style={styles.ipToggle}>
+            <Text style={styles.ipToggleText}>⚙️ Servidor: {serverIp || DEFAULT_IP}  {mostrarIp ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+
+          {mostrarIp && (
+            <View style={styles.ipBox}>
+              <Text style={styles.ipLabel}>IP:Puerto del servidor Laravel</Text>
+              <Text style={styles.ipHint}>Ejemplo: 192.168.1.50:8000</Text>
+              <TextInput
+                style={styles.ipInput}
+                placeholder={DEFAULT_IP}
+                placeholderTextColor="#6ee7b7"
+                value={serverIp}
+                onChangeText={setServerIp}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+              <TouchableOpacity style={styles.btnSaveIp} onPress={guardarIp}>
+                <Text style={styles.btnSaveIpText}>💾 Guardar Servidor</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -834,6 +883,17 @@ const styles = StyleSheet.create({
   syncInfoDate:     { color: '#6ee7b7', fontSize: 12, marginTop: 2 },
   btnDownload:      { backgroundColor: C.green, padding: 14, borderRadius: 10, alignItems: 'center' },
   btnDownloadText:  { color: C.white, fontWeight: 'bold', fontSize: 14 },
+
+  // Config IP
+  ipToggle:       { paddingVertical: 8, marginBottom: 10 },
+  ipToggleText:   { color: '#7dd3fc', fontSize: 12, fontWeight: '600' },
+  ipBox:          { backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, padding: 12, marginBottom: 12 },
+  ipLabel:        { color: C.white, fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  ipHint:         { color: '#94a3b8', fontSize: 11, marginBottom: 8 },
+  ipInput:        { backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: 10, fontSize: 14, color: C.white, marginBottom: 8 },
+  btnSaveIp:      { backgroundColor: C.blue, padding: 10, borderRadius: 8, alignItems: 'center' },
+  btnSaveIpText:  { color: C.white, fontWeight: 'bold', fontSize: 13 },
+
   loginCard:        { backgroundColor: C.white, borderRadius: 16, padding: 22, elevation: 4, shadowColor: '#000', shadowOffset: {width:0,height:2}, shadowOpacity: 0.1, shadowRadius: 8 },
   cardTitle:        { fontSize: 24, fontWeight: 'bold', color: C.textPrim, marginBottom: 4 },
   cardSubtitle:     { fontSize: 13, color: C.textSec, marginBottom: 20 },
