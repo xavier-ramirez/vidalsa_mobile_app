@@ -14,10 +14,14 @@ const DEFAULT_IP = '192.168.250.4:8000';
 
 async function getApiBase() {
   const saved = await AsyncStorage.getItem('server_ip');
-  const ip = (saved && saved.trim()) ? saved.trim() : DEFAULT_IP;
-  // Asegurar que tenga protocolo y el path de la API
-  const base = ip.startsWith('http') ? ip : `http://${ip}`;
-  return `${base}/api/mobile`;
+  let ip = (saved && saved.trim()) ? saved.trim() : DEFAULT_IP;
+
+  // Quitar http:// o https:// si el usuario lo escribió (lo ponemos nosotros)
+  ip = ip.replace(/^https?:\/\//i, '');
+  // Quitar barras al final: 192.168.250.4:8000/ → 192.168.250.4:8000
+  ip = ip.replace(/\/+$/, '');
+
+  return `http://${ip}/api/mobile`;
 }
 
 // ─── COLORES ──────────────────────────────────────────────────────────────────
