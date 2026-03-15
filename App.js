@@ -214,7 +214,7 @@ async function api(method, path, body = null) {
 // ─── COMPONENTES COMPARTIDOS ──────────────────────────────────────────────────
 // Logo usa asset local para funcionar sin conexión
 function LogoVidalsa({ size = 40 }) {
-  return <Image source={LOGO_LOCAL} style={{ height: size, width: size * 5.5, resizeMode: 'contain' }} />;
+  return <Image source={LOGO_LOCAL} style={{ height: size, maxWidth: '90%', width: size * 5.5, resizeMode: 'contain' }} />;
 }
 
 function TopHeader({ onOpenMenu }) {
@@ -259,7 +259,7 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
         <View style={{
           position: 'absolute', right: 0, top: 0, bottom: 0,
           width: width * 0.78, backgroundColor: '#ffffff',
-          paddingTop: 50, elevation: 20,
+          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 50, elevation: 20,
           shadowColor: '#000', shadowOffset: { width: -4, height: 0 }, shadowOpacity: 0.15, shadowRadius: 12
         }}>
           {/* Logo + usuario */}
@@ -1468,6 +1468,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 15,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
     elevation: 2,
