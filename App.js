@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
   SafeAreaView, StatusBar, FlatList, ActivityIndicator,
-  Alert, ScrollView, Modal, RefreshControl, Platform
+  Alert, ScrollView, Modal, RefreshControl, Platform, Image, Dimensions
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SQLite from 'expo-sqlite';
+import { MaterialIcons } from '@expo/vector-icons';
+
+
+// Logo local (no depende del servidor)
+const LOGO_LOCAL = require('./assets/logo.webp');
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 // La IP se guarda en el teléfono y se puede cambiar desde la app.
@@ -206,6 +211,133 @@ async function api(method, path, body = null) {
   return data;
 }
 
+// ─── COMPONENTES COMPARTIDOS ──────────────────────────────────────────────────
+// Logo usa asset local para funcionar sin conexión
+function LogoVidalsa({ size = 40 }) {
+  return <Image source={LOGO_LOCAL} style={{ height: size, width: size * 5.5, resizeMode: 'contain' }} />;
+}
+
+function TopHeader({ onOpenMenu }) {
+  return (
+    <View style={styles.topHeaderPremium}>
+      <LogoVidalsa size={32} />
+      <TouchableOpacity onPress={onOpenMenu} style={{ padding: 8 }}>
+        <MaterialIcons name="menu" size={28} color="#0067b1" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Helper para ítem del menú con MaterialIcons
+function MenuItem({ icon, label, onPress, color = '#334155', subItem = false }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.menuItem,
+        subItem && { paddingVertical: 10, paddingLeft: 4 }
+      ]}
+      activeOpacity={0.7}
+    >
+      <MaterialIcons name={icon} size={subItem ? 20 : 22} color={color} style={{ width: 32 }} />
+      <Text style={[styles.menuItemText, { color, fontSize: subItem ? 14 : 15 }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
+  const { width } = Dimensions.get('window');
+  const [configOpen, setConfigOpen] = useState(false);
+  if (!visible) return null;
+  return (
+    <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        {/* Fondo oscuro al tap cierra */}
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={onClose} activeOpacity={1} />
+
+        {/* Panel deslizante */}
+        <View style={{
+          position: 'absolute', right: 0, top: 0, bottom: 0,
+          width: width * 0.78, backgroundColor: '#ffffff',
+          paddingTop: 50, elevation: 20,
+          shadowColor: '#000', shadowOffset: { width: -4, height: 0 }, shadowOpacity: 0.15, shadowRadius: 12
+        }}>
+          {/* Logo + usuario */}
+          <View style={{ paddingHorizontal: 20, paddingBottom: 16, marginBottom: 4, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+            <LogoVidalsa size={30} />
+            {user && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 6 }}>
+                <MaterialIcons name="account-circle" size={18} color="#64748b" />
+                <Text style={{ fontSize: 12, color: '#64748b' }} numberOfLines={1}>
+                  {user.name || user.email || 'Usuario'}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+            <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+
+              {/* Inicio — igual que web: "home" */}
+              <MenuItem icon="home" label="Inicio" onPress={() => { onNavigate('dashboard'); onClose(); }} />
+
+              {/* Vehículo — igual que web: "agriculture" */}
+              <MenuItem icon="agriculture" label="Vehículo" onPress={() => { onNavigate('equipos'); onClose(); }} />
+
+              {/* Recepción — igual que web: "local-shipping" */}
+              <MenuItem icon="local-shipping" label="Recepción" onPress={() => { onNavigate('movs'); onClose(); }} />
+
+              {/* Divisor */}
+              <View style={{ height: 1, backgroundColor: '#f1f5f9', marginVertical: 8 }} />
+
+              {/* Configuraciones — igual que web: "settings" */}
+              <TouchableOpacity
+                onPress={() => setConfigOpen(!configOpen)}
+                style={[styles.menuItem, { justifyContent: 'space-between' }]}
+                activeOpacity={0.7}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialIcons name="settings" size={22} color="#334155" style={{ width: 32 }} />
+                  <Text style={styles.menuItemText}>Configuraciones</Text>
+                </View>
+                <MaterialIcons name={configOpen ? 'expand-less' : 'expand-more'} size={20} color="#94a3b8" />
+              </TouchableOpacity>
+
+              {configOpen && (
+                <View style={{ marginLeft: 20, borderLeftWidth: 2, borderLeftColor: '#e2e8f0', paddingLeft: 8, marginBottom: 4 }}>
+                  {/* Usuarios — igual que web: "people" */}
+                  <MenuItem icon="people" label="Usuarios" onPress={onClose} subItem />
+                  {/* Frentes — igual que web: "business" */}
+                  <MenuItem icon="business" label="Frentes de Trabajo" onPress={onClose} subItem />
+                  {/* Catálogo — igual que web: "menu-book" */}
+                  <MenuItem icon="menu-book" label="Catálogo de Modelos" onPress={onClose} subItem />
+                </View>
+              )}
+
+              {/* Consumibles — igual que web: "local-gas-station" */}
+              <MenuItem icon="local-gas-station" label="Consumibles" onPress={onClose} />
+
+              {/* Secciones adicionales según la web */}
+              <MenuItem icon="dashboard" label="Sección 5" onPress={onClose} />
+              <MenuItem icon="analytics" label="Sección 6" onPress={onClose} />
+              <MenuItem icon="inventory" label="Sección 7" onPress={onClose} />
+
+              <View style={{ height: 40 }} />
+
+              {/* Cerrar Sesión — igual que web: "logout" */}
+              <View style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 16, marginBottom: 30 }}>
+                <MenuItem icon="logout" label="Cerrar Sesión" onPress={() => { onClose(); setTimeout(onLogout, 250); }} color="#ef4444" />
+              </View>
+
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+
 // ─── PANTALLA DE LOGIN ────────────────────────────────────────────────────────
 function PantallaLogin({ onLogin }) {
   const [correo, setCorreo] = useState('');
@@ -216,6 +348,7 @@ function PantallaLogin({ onLogin }) {
   const [conteoLocal, setConteoLocal] = useState(0);
   const [serverIp, setServerIp] = useState('');
   const [mostrarIp, setMostrarIp] = useState(false);
+  const [mostrarFormLogin, setMostrarFormLogin] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -226,21 +359,21 @@ function PantallaLogin({ onLogin }) {
       }
       const equipos = await leerEquiposLocal();
       setConteoLocal(equipos.length);
-      // Cargar IP guardada
       const ip = await AsyncStorage.getItem('server_ip');
       if (ip) setServerIp(ip);
       else setServerIp(DEFAULT_IP);
+      // Si NO hay datos locales, mostrar formulario de login directamente
+      if (equipos.length === 0) setMostrarFormLogin(true);
     })();
   }, []);
 
   const guardarIp = async () => {
-    const ipLimpia = serverIp.trim().replace(/\/+$/, ''); // quitar barra final
+    const ipLimpia = serverIp.trim().replace(/\/+$/, '');
     if (!ipLimpia) { Alert.alert('Error', 'Escribe una IP o dirección válida.'); return; }
     await AsyncStorage.setItem('server_ip', ipLimpia);
     setMostrarIp(false);
     Alert.alert('✅ Guardado', `Servidor configurado: ${ipLimpia}\n\nAhora intenta descargar los datos.`);
   };
-
 
   const descargarDatos = async () => {
     setDescargando(true);
@@ -256,15 +389,34 @@ function PantallaLogin({ onLogin }) {
       setConteoLocal(equipos.length);
       Alert.alert(
         '✅ Descarga Exitosa',
-        `Se guardaron ${equipos.length} equipos y ${frentes.length} frentes en el teléfono.\n\nYa puedes trabajar sin internet.`
+        `Se guardaron ${equipos.length} equipos y ${frentes.length} frentes.\n\nYa puedes trabajar sin internet.`
       );
     } catch (e) {
       Alert.alert(
         '❌ Sin Conexión',
-        'No se pudo conectar al servidor. Verifica que estás en la misma red WiFi que la PC donde corre el sistema.\n\nDetalle: ' + e.message
+        'No se pudo conectar al servidor. Verifica que estás en la misma red WiFi.\n\nDetalle: ' + e.message
       );
     } finally {
       setDescargando(false);
+    }
+  };
+
+  // ─── Modo offline: entrar sin servidor si hay datos locales ───
+  const entrarSinConexion = async () => {
+    try {
+      // Intentar recuperar último usuario guardado
+      const savedUser = await AsyncStorage.getItem('user');
+      if (savedUser) {
+        onLogin(JSON.parse(savedUser));
+        return;
+      }
+      // Si no hay usuario guardado, crear uno local básico
+      const usuarioOffline = { name: 'Modo Offline', email: 'offline@local', offline: true };
+      await AsyncStorage.setItem('user', JSON.stringify(usuarioOffline));
+      await AsyncStorage.setItem('token', 'offline_token');
+      onLogin(usuarioOffline);
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo entrar en modo offline: ' + e.message);
     }
   };
 
@@ -278,7 +430,7 @@ function PantallaLogin({ onLogin }) {
       const data = await api('POST', '/login', { correo: correo.trim(), password });
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
-      // Descargar datos automáticamente después del login
+      // Descargar datos automáticamente tras login exitoso
       try {
         const [equipos, frentes] = await Promise.all([
           api('GET', '/equipos'),
@@ -287,7 +439,7 @@ function PantallaLogin({ onLogin }) {
         await guardarEquiposLocal(equipos);
         await guardarFrentesLocal(frentes);
       } catch (_) {
-        // Si falla la descarga post-login, no bloqueamos: usamos lo que hay en local
+        // Si falla la descarga post-login, continúa con datos locales existentes
       }
       onLogin(data.user);
     } catch (e) {
@@ -300,62 +452,108 @@ function PantallaLogin({ onLogin }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fdfbfb' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fdfbfb" />
-      {/* Blue Curve Background */}
-      <View style={styles.blueCurve} />
-      
+      {/* Curva lateral azul — igual que la web */}
+      <View style={styles.blueCurveDashboard} />
+
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
-        {/* ── Tarjeta Premium de Login ── */}
+
+        {/* ── Tarjeta de Login ── */}
         <View style={styles.loginCardPremium}>
-          {/* Fake Logo */}
-          <View style={{ alignItems: 'center', marginBottom: 40, marginTop: 10 }}>
-            <Text style={{ fontSize: 26, fontWeight: '900', color: '#000033', letterSpacing: 0.5, textAlign: 'center', lineHeight: 28 }}>
-              <Text style={{ color: '#0067b1', fontSize: 40, fontStyle: 'italic' }}>V</Text> <Text style={{ fontSize: 12, fontWeight: '700', letterSpacing: 3, color: '#334155' }}>C O N S T R U C T O R A</Text>{'\n'}
-              <Text style={{ letterSpacing: 2 }}>VIDALSA 27.CA</Text>
-            </Text>
+          {/* Logo local — no depende de internet */}
+          <View style={{ alignItems: 'center', marginBottom: 24, marginTop: 6 }}>
+            <LogoVidalsa size={70} />
           </View>
 
-          <View style={styles.inputContainerPremium}>
-            <Text style={styles.floatingLabel}>Correo corporativo</Text>
-            <TextInput
-              style={styles.inputPremium}
-              placeholder="fsanchez@cvidalsa27.com"
-              placeholderTextColor="#94a3b8"
-              value={correo}
-              onChangeText={setCorreo}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
+          {/* ── Modo Offline: botón principal si hay datos ── */}
+          {conteoLocal > 0 && !mostrarFormLogin && (
+            <View style={{ alignItems: 'center' }}>
+              {/* Info de datos locales */}
+              <View style={{ backgroundColor: '#f0fdf4', borderRadius: 10, padding: 12, width: '100%', marginBottom: 16, borderWidth: 1, borderColor: '#bbf7d0' }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#166534', textAlign: 'center' }}>
+                  📦 {conteoLocal} equipos disponibles offline
+                </Text>
+                {ultimaSync ? (
+                  <Text style={{ fontSize: 11, color: '#4ade80', textAlign: 'center', marginTop: 3 }}>
+                    Última sincronización: {ultimaSync}
+                  </Text>
+                ) : null}
+              </View>
 
-          <View style={styles.inputContainerPremium}>
-            <Text style={styles.floatingLabel}>Contraseña</Text>
-            <TextInput
-              style={styles.inputPremium}
-              placeholder="••••••••"
-              placeholderTextColor="#94a3b8"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
+              {/* BOTÓN PRINCIPAL: Continuar sin conexión */}
+              <TouchableOpacity
+                style={{ backgroundColor: '#00004d', borderRadius: 12, paddingVertical: 16, width: '100%', alignItems: 'center', marginBottom: 12, elevation: 4, shadowColor: '#000', shadowOffset: {width:0,height:3}, shadowOpacity: 0.2, shadowRadius: 6 }}
+                onPress={entrarSinConexion}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialIcons name="wifi-off" size={20} color="#fff" />
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>Continuar sin conexión</Text>
+                </View>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.btnPremium, loading && { opacity: 0.7 }]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color={C.white} />
-              : <Text style={styles.btnPremiumText}>Iniciar sesión</Text>
-            }
-          </TouchableOpacity>
+              {/* Botón secundario: iniciar sesión con servidor */}
+              <TouchableOpacity
+                style={{ backgroundColor: 'transparent', borderRadius: 12, paddingVertical: 12, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#cbd5e0' }}
+                onPress={() => setMostrarFormLogin(true)}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialIcons name="wifi" size={16} color="#64748b" />
+                  <Text style={{ color: '#64748b', fontWeight: '600', fontSize: 14 }}>Iniciar sesión con servidor</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── Formulario de Login (online) ── */}
+          {mostrarFormLogin && (
+            <>
+              {conteoLocal > 0 && (
+                <TouchableOpacity onPress={() => setMostrarFormLogin(false)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 4 }}>
+                  <MaterialIcons name="arrow-back" size={16} color="#64748b" />
+                  <Text style={{ color: '#64748b', fontSize: 13 }}>Volver al modo offline</Text>
+                </TouchableOpacity>
+              )}
+
+              <View style={styles.inputContainerPremium}>
+                <Text style={styles.floatingLabel}>Correo corporativo</Text>
+                <TextInput
+                  style={styles.inputPremium}
+                  placeholder="usuario@cvidalsa27.com"
+                  placeholderTextColor="#94a3b8"
+                  value={correo}
+                  onChangeText={setCorreo}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+
+              <View style={styles.inputContainerPremium}>
+                <Text style={styles.floatingLabel}>Contraseña</Text>
+                <TextInput
+                  style={styles.inputPremium}
+                  placeholder="••••••••"
+                  placeholderTextColor="#94a3b8"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.btnPremium, loading && { opacity: 0.7 }]}
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading
+                  ? <ActivityIndicator color={C.white} />
+                  : <Text style={styles.btnPremiumText}>Iniciar sesión</Text>
+                }
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
-        {/* ── Sección de Datos Locales (Sutil más abajo) ── */}
-        <View style={{ marginTop: 50, alignItems: 'center' }}>
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>Modo Offline</Text>
-          {conteoLocal > 0 && <Text style={{ color: '#cbd5e0', fontSize: 12, marginBottom: 15 }}>{conteoLocal} equipos guardados | Sync: {ultimaSync}</Text>}
-          
+        {/* ── Sección Offline / Descarga ── */}
+        <View style={{ marginTop: 40, alignItems: 'center' }}>
           <TouchableOpacity
             style={[styles.btnDownload, descargando && { opacity: 0.6 }, { backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.4)', borderWidth: 1 }]}
             onPress={descargarDatos}
@@ -363,18 +561,25 @@ function PantallaLogin({ onLogin }) {
           >
             {descargando
               ? <ActivityIndicator color={C.white} />
-              : <Text style={styles.btnDownloadText}>Descargar Datos del Servidor</Text>
+              : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialIcons name="cloud-download" size={16} color="#fff" />
+                  <Text style={styles.btnDownloadText}>Descargar / Actualizar datos</Text>
+                </View>
             }
           </TouchableOpacity>
-          
-          <TouchableOpacity onPress={() => setMostrarIp(!mostrarIp)} style={{ marginTop: 20 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>⚙️ Configurar Servidor: {serverIp || DEFAULT_IP}</Text>
+
+          <TouchableOpacity onPress={() => setMostrarIp(!mostrarIp)} style={{ marginTop: 16 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
+              ⚙️ Servidor: {serverIp || DEFAULT_IP}
+            </Text>
           </TouchableOpacity>
 
           {mostrarIp && (
             <View style={styles.ipBox}>
               <TextInput style={styles.ipInput} placeholder={DEFAULT_IP} placeholderTextColor="#6ee7b7" value={serverIp} onChangeText={setServerIp} autoCapitalize="none" keyboardType="url" />
-              <TouchableOpacity style={styles.btnSaveIp} onPress={guardarIp}><Text style={styles.btnSaveIpText}>Guardar IP</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.btnSaveIp} onPress={guardarIp}>
+                <Text style={styles.btnSaveIpText}>Guardar Servidor</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -382,9 +587,9 @@ function PantallaLogin({ onLogin }) {
       </ScrollView>
     </SafeAreaView>
   );
-
-
 }
+
+
 
 // ─── BADGE DE ESTADO ─────────────────────────────────────────────────────────
 function BadgeEstado({ estado }) {
@@ -401,92 +606,296 @@ function BadgeEstado({ estado }) {
   );
 }
 
-// ─── PANTALLA DE EQUIPOS ──────────────────────────────────────────────────────
-function PantallaEquipos({ user, onLogout }) {
-  const [equipos, setEquipos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [busqueda, setBusqueda] = useState('');
-  const [equipoSel, setEquipoSel] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+// ─── PANTALLA DASHBOARD ─────────────────────────────────────────────────────────
+function PantallaDashboard({ onOpenMenu, equiposCount }) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <TopHeader onOpenMenu={onOpenMenu} />
+      
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 15, paddingBottom: 15 }}>
+            <Text style={[styles.dashboardTitle, {fontSize: 22, marginTop: 0, marginBottom: 5, textAlign: 'left'}]}>Sistema de Gestión de{'\n'}Equipos Operacionales</Text>
+        </View>
+        <View style={styles.dashboardWidgetGroup}>
+          <View style={styles.widgetPremium}>
+            <View style={[styles.widgetIconBox, { backgroundColor: '#dbeafe' }]}>
+              <Text style={{ fontSize: 24, color: '#1e3a8a' }}>🚛</Text>
+            </View>
+            <View style={{ marginLeft: 15, flex: 1 }}>
+              <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Movilizaciones Hoy</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 5 }}>
+                <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#0f172a', lineHeight: 32 }}>0</Text>
+                <Text style={{ fontSize: 13, color: '#94a3b8', marginLeft: 8, marginBottom: 4 }}>| 0 Por Confirmar</Text>
+              </View>
+            </View>
+          </View>
 
-  const cargar = useCallback(async (q = '') => {
+          <View style={styles.widgetPremium}>
+            <View style={[styles.widgetIconBox, { backgroundColor: '#fef3c7' }]}>
+              <Text style={{ fontSize: 24, color: '#d97706' }}>🔔</Text>
+            </View>
+            <View style={{ marginLeft: 15, flex: 1 }}>
+              <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Alertas Documentos</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 5 }}>
+                <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#0f172a', lineHeight: 32 }}>79</Text>
+                <Text style={{ fontSize: 13, color: '#0f172a', fontWeight: '700', marginLeft: 8, marginBottom: 4 }}>| Por Renovar</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.widgetPremium}>
+            <View style={[styles.widgetIconBox, { backgroundColor: '#f1f5f9' }]}>
+              <Text style={{ fontSize: 24 }}>📱</Text>
+            </View>
+            <View style={{ marginLeft: 15, flex: 1 }}>
+              <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Equipos Offline Guardados</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 5 }}>
+                <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#0f172a', lineHeight: 32 }}>{equiposCount}</Text>
+                <Text style={{ fontSize: 13, color: '#94a3b8', marginLeft: 8, marginBottom: 4 }}>| Sincronizados</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── PANTALLA DE EQUIPOS ──────────────────────────────────────────────────────
+function PantallaEquipos({ user, onOpenMenu }) {
+  const [equipos, setEquipos]         = useState([]);
+  const [frentes, setFrentes]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [busqueda, setBusqueda]       = useState('');
+  const [filtroFrente, setFiltroFrente] = useState('');
+  const [filtroTipo, setFiltroTipo]   = useState('');
+  const [equipoSel, setEquipoSel]     = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [showFrenteDD, setShowFrenteDD] = useState(false);
+  const [showTipoDD, setShowTipoDD]   = useState(false);
+
+  // Unique types derived from loaded equipos
+  const tiposUnicos = useMemo(() => {
+    const set = new Set(equipos.map(e => e.tipo).filter(Boolean));
+    return ['', ...Array.from(set).sort()];
+  }, [equipos]);
+
+  // Stats for consolidado bar — like web sidebar counters
+  const stats = useMemo(() => ({
+    total:         equipos.length,
+    inoperativos:  equipos.filter(e => e.estado === 'INOPERATIVO').length,
+    mantenimiento: equipos.filter(e => e.estado === 'EN MANTENIMIENTO').length,
+  }), [equipos]);
+
+  // Full equipment list (re-load when filters change)
+  const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await leerEquiposLocal(q);
+      let data = await leerEquiposLocal(busqueda);
+      if (filtroFrente) data = data.filter(e => e.frente === filtroFrente);
+      if (filtroTipo)   data = data.filter(e => e.tipo   === filtroTipo);
       setEquipos(data);
-    } catch (e) {
+    } catch (_) {
       Alert.alert('Error', 'No se pudo leer los datos locales.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [busqueda, filtroFrente, filtroTipo]);
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { leerFrentesLocal().then(setFrentes); }, []);
 
-  const onBuscar = (q) => {
-    setBusqueda(q);
-    cargar(q);
+  // Status map — matches web icons exactly
+  const estadoMap = {
+    OPERATIVO:          { color: '#16a34a', icon: 'check-circle',  label: 'Operativo' },
+    INOPERATIVO:        { color: '#dc2626', icon: 'cancel',        label: 'Inoperativo' },
+    'EN MANTENIMIENTO': { color: '#d97706', icon: 'engineering',   label: 'Mantenimiento' },
+    DESINCORPORADO:     { color: '#475569', icon: 'archive',       label: 'Desincorporado' },
   };
+  const getEstado = (e) => estadoMap[e] || { color: '#475569', icon: 'help', label: e || 'N/A' };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.equipoCard} onPress={() => { setEquipoSel(item); setModalVisible(true); }} activeOpacity={0.7}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.equipoCodigo}>{item.codigo_patio || 'S/C'}</Text>
-          <Text style={styles.equipoTipo}>{item.tipo} • {item.marca} {item.modelo}</Text>
-          <Text style={styles.equipoFrente}>📍 {item.frente || 'Sin Asignar'}</Text>
+  const renderItem = ({ item }) => {
+    const est = getEstado(item.estado);
+    return (
+      <View style={styles.equipoCard}>
+        {/* TOP ROW: Frente (small upper left) + Tipo (bold upper right) — like web table */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: '#64748b', flexShrink: 1, marginRight: 6, textTransform: 'uppercase', letterSpacing: 0.3 }} numberOfLines={2}>
+            {item.frente || 'SIN ASIGNAR'}
+          </Text>
+          <Text style={{ fontSize: 13, fontWeight: '800', color: '#000', textAlign: 'right' }} numberOfLines={1}>
+            {item.tipo || '—'}
+          </Text>
         </View>
-        <BadgeEstado estado={item.estado} />
+
+        {/* BODY: image placeholder (left) + data column (right) */}
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+          {/* placeholder igual al web: icono gris centrado */}
+          <View style={{ width: 70, height: 55, backgroundColor: '#f8fafc', borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' }}>
+            <MaterialIcons name="image-not-supported" size={26} color="#cbd5e1" />
+          </View>
+          {/* Datos igual al web: Marca bold, Modelo gris, S/M/P serials, ID */}
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: '#000', marginBottom: 1 }}>{item.marca || '—'}</Text>
+            <Text style={{ fontSize: 13, color: '#718096', marginBottom: 5 }}>{item.modelo || '—'}</Text>
+            {item.serial_chasis ? <Text style={styles.serialLine}><Text style={styles.serialKey}>S: </Text>{item.serial_chasis}</Text> : null}
+            {item.serial_motor  ? <Text style={styles.serialLine}><Text style={styles.serialKey}>M: </Text>{item.serial_motor}</Text>  : null}
+            {item.placa && item.placa !== 'S/P'
+              ? <Text style={[styles.serialLine, { color: '#0067b1' }]}><Text style={[styles.serialKey, { color: '#0067b1' }]}>P: </Text>{item.placa}</Text>
+              : <Text style={{ fontSize: 12, color: '#a0aec0', fontStyle: 'italic' }}>Sin Placa</Text>
+            }
+            <Text style={{ fontSize: 12, color: '#2d3748', fontWeight: '600', marginTop: 2 }}>
+              <Text style={{ fontWeight: '800' }}>ID: </Text>{item.codigo_patio || '—'}
+            </Text>
+          </View>
+        </View>
+
+        {/* FOOTER: status pill (icon + label + chevron) + dark navy eye button */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 10, gap: 10 }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#fff', gap: 6 }}>
+            <MaterialIcons name={est.icon} size={16} color={est.color} />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#334155', flex: 1 }}>{est.label}</Text>
+            <MaterialIcons name="expand-more" size={18} color="#94a3b8" />
+          </View>
+          <TouchableOpacity
+            style={{ backgroundColor: '#00004d', borderRadius: 10, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+            onPress={() => { setEquipoSel(item); setModalVisible(true); }}
+          >
+            <MaterialIcons name="visibility" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <View style={styles.topHeaderPremium}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Text style={{ fontSize: 18, fontWeight: '900', color: '#000033', letterSpacing: 0.5 }}>
-            <Text style={{ color: '#0067b1', fontStyle: 'italic', fontSize: 24 }}>V</Text> C O N S T R U C T O R A{'\n'}
-            <Text style={{ letterSpacing: 1.5 }}>VIDALSA 27.CA</Text>
-          </Text>
-        </View>
-        <TouchableOpacity onPress={onLogout}>
-          <Text style={{ fontSize: 28, color: '#0067b1', fontWeight: 'bold', marginTop: -8 }}>≡</Text>
-        </TouchableOpacity>
+      <TopHeader onOpenMenu={onOpenMenu} />
+
+      {/* Título */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6, backgroundColor: '#fff' }}>
+        <Text style={{ fontSize: 20, fontWeight: '900', color: '#0f172a' }}>Gestión de Equipos y Maquinaria</Text>
       </View>
 
-      <Text style={styles.dashboardTitle}>Sistema de Gestión de{'\n'}Equipos Operacionales</Text>
+      {/* Filtros + Acciones + Consolidado — igual web responsive */}
+      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9', gap: 8 }}>
 
-      <View style={styles.dashboardWidgetGroup}>
-        <View style={styles.widgetPremium}>
-          <View style={[styles.widgetIconBox, { backgroundColor: '#dbeafe' }]}>
-            <Text style={{ fontSize: 22 }}>🚛</Text>
-          </View>
-          <View style={{ marginLeft: 15, flex: 1 }}>
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Equipos en Teléfono</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-              <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#000033' }}>{equipos.length}</Text>
-              <Text style={{ fontSize: 13, color: '#94a3b8', marginLeft: 8 }}>| Sincronizados</Text>
+        {/* Filtrar Frente */}
+        <View>
+          <TouchableOpacity
+            style={[styles.filterPill, filtroFrente && { borderColor: '#0067b1', backgroundColor: '#e1effa' }]}
+            onPress={() => { setShowFrenteDD(!showFrenteDD); setShowTipoDD(false); }}
+          >
+            <MaterialIcons name="search" size={18} color="#94a3b8" style={{ marginRight: 4 }} />
+            <Text style={{ fontSize: 13, color: filtroFrente ? '#0067b1' : '#94a3b8', flex: 1 }} numberOfLines={1}>
+              {filtroFrente || 'Filtrar Frente...'}
+            </Text>
+            {filtroFrente
+              ? <TouchableOpacity onPress={() => setFiltroFrente('')}><MaterialIcons name="close" size={18} color="#94a3b8" /></TouchableOpacity>
+              : null}
+          </TouchableOpacity>
+          {showFrenteDD && (
+            <View style={styles.dropdownList}>
+              <TouchableOpacity style={styles.dropdownItem} onPress={() => { setFiltroFrente(''); setShowFrenteDD(false); }}>
+                <Text style={[styles.dropdownItemText, { color: '#64748b', fontStyle: 'italic' }]}>TODOS LOS FRENTES</Text>
+              </TouchableOpacity>
+              <ScrollView style={{ maxHeight: 200 }}>
+                {frentes.map(f => (
+                  <TouchableOpacity key={f.id_frente} style={styles.dropdownItem} onPress={() => { setFiltroFrente(f.nombre); setShowFrenteDD(false); }}>
+                    <Text style={[styles.dropdownItemText, filtroFrente === f.nombre && { color: '#0067b1', fontWeight: '700' }]}>{f.nombre}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
+          )}
+        </View>
+
+        {/* Filtrar Tipo */}
+        <View>
+          <TouchableOpacity
+            style={[styles.filterPill, filtroTipo && { borderColor: '#0067b1', backgroundColor: '#e1effa' }]}
+            onPress={() => { setShowTipoDD(!showTipoDD); setShowFrenteDD(false); }}
+          >
+            <MaterialIcons name="search" size={18} color="#94a3b8" style={{ marginRight: 4 }} />
+            <Text style={{ fontSize: 13, color: filtroTipo ? '#0067b1' : '#94a3b8', flex: 1 }} numberOfLines={1}>
+              {filtroTipo || 'Filtrar Tipo...'}
+            </Text>
+            {filtroTipo
+              ? <TouchableOpacity onPress={() => setFiltroTipo('')}><MaterialIcons name="close" size={18} color="#94a3b8" /></TouchableOpacity>
+              : null}
+          </TouchableOpacity>
+          {showTipoDD && (
+            <View style={styles.dropdownList}>
+              <TouchableOpacity style={styles.dropdownItem} onPress={() => { setFiltroTipo(''); setShowTipoDD(false); }}>
+                <Text style={[styles.dropdownItemText, { color: '#64748b', fontStyle: 'italic' }]}>TODOS LOS TIPOS</Text>
+              </TouchableOpacity>
+              <ScrollView style={{ maxHeight: 200 }}>
+                {tiposUnicos.filter(Boolean).map(t => (
+                  <TouchableOpacity key={t} style={styles.dropdownItem} onPress={() => { setFiltroTipo(t); setShowTipoDD(false); }}>
+                    <Text style={[styles.dropdownItemText, filtroTipo === t && { color: '#0067b1', fontWeight: '700' }]}>{t}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+
+        {/* Buscar Seriales + botón filter_list */}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={[styles.filterPill, { flex: 1 }]}>
+            <MaterialIcons name="search" size={18} color="#94a3b8" style={{ marginRight: 4 }} />
+            <TextInput
+              style={{ flex: 1, fontSize: 13, color: '#1e293b', paddingVertical: 0 }}
+              placeholder="Buscar Seriales"
+              placeholderTextColor="#94a3b8"
+              value={busqueda}
+              onChangeText={setBusqueda}
+            />
+            {busqueda
+              ? <TouchableOpacity onPress={() => setBusqueda('')}><MaterialIcons name="close" size={18} color="#94a3b8" /></TouchableOpacity>
+              : null}
+          </View>
+          {/* Botón filtro avanzado (ilustrativo) */}
+          <View style={{ width: 45, height: 45, borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fbfcfd' }}>
+            <MaterialIcons name="filter-list" size={22} color="#64748b" />
+          </View>
+        </View>
+
+        {/* Botón Acciones — azul con engranaje + chevron, igual al web */}
+        <TouchableOpacity style={{ backgroundColor: '#0067b1', borderRadius: 12, height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <MaterialIcons name="settings" size={20} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Acciones</Text>
+          <MaterialIcons name="expand-more" size={20} color="#fff" />
+        </TouchableOpacity>
+
+        {/* CONSOLIDADO DE EQUIPOS — barra azul oscura igual que la web */}
+        <View style={{ backgroundColor: '#1e293b', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <MaterialIcons name="pie-chart" size={13} color="rgba(255,255,255,0.65)" />
+          <Text style={{ fontSize: 9, fontWeight: '800', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, flex: 1 }}>Consolidado de Equipos</Text>
+          {/* TOTAL */}
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>{stats.total} <Text style={{ fontWeight: '600', fontSize: 11 }}>TOTAL</Text></Text>
+          </View>
+          {/* Inoperativos */}
+          <View style={{ backgroundColor: 'rgba(239,68,68,0.18)', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
+            <MaterialIcons name="cancel" size={13} color="#f87171" />
+            <Text style={{ color: '#f87171', fontWeight: '700', fontSize: 11 }}>{stats.inoperativos} Inoperativos</Text>
+          </View>
+          {/* Mantenimiento */}
+          <View style={{ backgroundColor: 'rgba(245,158,11,0.18)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' }}>
+            <MaterialIcons name="engineering" size={13} color="#fbbf24" />
+            <Text style={{ color: '#fbbf24', fontWeight: '700', fontSize: 11 }}>{stats.mantenimiento}</Text>
           </View>
         </View>
       </View>
 
-      <View style={[styles.searchBar, { backgroundColor: 'transparent', borderBottomWidth: 0, paddingHorizontal: 20 }]}>
-        <TextInput
-          style={[styles.searchInput, { backgroundColor: '#fff', borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: {width:0,height:2}, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }]}
-          placeholder="🔍 Buscar código, frente..."
-          placeholderTextColor="#94a3b8"
-          value={busqueda}
-          onChangeText={onBuscar}
-        />
-      </View>
-
+      {/* Lista de Tarjetas */}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={C.blue} />
-          <Text style={styles.loadingText}>Leyendo datos locales...</Text>
+          <Text style={styles.loadingText}>Cargando equipos...</Text>
         </View>
       ) : (
         <FlatList
@@ -494,53 +903,91 @@ function PantallaEquipos({ user, onLogout }) {
           keyExtractor={(item) => String(item.id_equipo)}
           renderItem={renderItem}
           ListEmptyComponent={
-            <View style={styles.centered}>
-              <Text style={styles.emptyText}>
-                {busqueda
-                  ? 'Sin resultados. Intenta con otro término.'
-                  : '⚠️ No hay datos locales.\nVuelve al login y presiona "Descargar Datos".'}
+            <View style={[styles.centered, { paddingVertical: 60 }]}>
+              <MaterialIcons name="filter-alt" size={48} color="#cbd5e0" />
+              <Text style={[styles.emptyText, { marginTop: 10, textAlign: 'center' }]}>
+                {busqueda || filtroFrente || filtroTipo
+                  ? 'Sin resultados con estos filtros.'
+                  : 'Seleccione un filtro para ver los equipos.'}
               </Text>
             </View>
           }
-          contentContainerStyle={{ padding: 12 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: 30 }}
         />
       )}
 
-      {/* Modal Detalle Equipo */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      {/* ── Modal de Detalles (igual que web) ── */}
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <ScrollView>
-              {equipoSel && (
-                <>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <Text style={styles.modalTitle}>{equipoSel.codigo_patio || 'Sin Código'}</Text>
-                    <BadgeEstado estado={equipoSel.estado} />
+          <View style={[styles.modalContainer, { maxHeight: '92%' }]}>
+            {equipoSel && (
+              <>
+                {/* Header azul oscuro: TIPO + Serial (igual que la web) */}
+                <View style={{ backgroundColor: '#00004d', paddingHorizontal: 22, paddingVertical: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900', letterSpacing: 0.5 }}>{equipoSel.tipo || 'EQUIPO'}</Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 3 }}>
+                      {equipoSel.serial_chasis ? `Serial: ${equipoSel.serial_chasis}` : equipoSel.codigo_patio || 'Sin código'}
+                    </Text>
                   </View>
-                  <Text style={styles.modalSection}>📋 Datos del Vehículo</Text>
-                  <DetalleRow label="Tipo"     valor={equipoSel.tipo} />
-                  <DetalleRow label="Marca"    valor={equipoSel.marca} />
-                  <DetalleRow label="Modelo"   valor={equipoSel.modelo} />
-                  <DetalleRow label="Año"      valor={equipoSel.anio} />
-                  <DetalleRow label="Categoría" valor={equipoSel.categoria} />
-                  <Text style={styles.modalSection}>🔩 Identificación</Text>
-                  <DetalleRow label="S. Chasis"  valor={equipoSel.serial_chasis} />
-                  <DetalleRow label="S. Motor"   valor={equipoSel.serial_motor} />
-                  <DetalleRow label="Placa"      valor={equipoSel.placa} />
-                  <DetalleRow label="Nº Etiqueta" valor={equipoSel.nro_etiqueta} />
-                  <Text style={styles.modalSection}>📍 Ubicación Actual</Text>
-                  <DetalleRow label="Frente"  valor={equipoSel.frente} />
-                  <DetalleRow label="Detalle" valor={equipoSel.detalle_ubi} />
-                </>
-              )}
-            </ScrollView>
-            <TouchableOpacity style={[styles.btnPrimary, { margin: 16 }]} onPress={() => setModalVisible(false)}>
+                  <TouchableOpacity
+                    onPress={() => setModalVisible(false)}
+                    style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 18, lineHeight: 20 }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView style={{ padding: 16 }} contentContainerStyle={{ paddingBottom: 10 }}>
+                  <AccordionSection title="📍 Ubicación Actual" initialOpen={true}>
+                    <DetalleRow label="Frente"        valor={equipoSel.frente || 'Sin Asignar'} />
+                    <DetalleRow label="Detalle Ubic." valor={equipoSel.detalle_ubi} />
+                  </AccordionSection>
+                  <AccordionSection title="🔩 Seriales e Identificación" initialOpen={true}>
+                    <DetalleRow label="Código / ID"  valor={equipoSel.codigo_patio} />
+                    <DetalleRow label="Nº Etiqueta"  valor={equipoSel.nro_etiqueta} />
+                    <DetalleRow label="Serial Chasis" valor={equipoSel.serial_chasis} />
+                    <DetalleRow label="Serial Motor"  valor={equipoSel.serial_motor} />
+                    <DetalleRow label="Placa"         valor={equipoSel.placa && equipoSel.placa !== 'S/P' ? equipoSel.placa : 'Sin Placa'} />
+                  </AccordionSection>
+                  <AccordionSection title="ℹ️ Información General">
+                    <DetalleRow label="Marca"     valor={equipoSel.marca} />
+                    <DetalleRow label="Modelo"    valor={equipoSel.modelo} />
+                    <DetalleRow label="Año"       valor={equipoSel.anio} />
+                    <DetalleRow label="Categoría" valor={equipoSel.categoria} />
+                  </AccordionSection>
+                </ScrollView>
+              </>
+            )}
+            <TouchableOpacity style={[styles.btnPrimary, { margin: 16, marginTop: 4 }]} onPress={() => setModalVisible(false)}>
               <Text style={styles.btnPrimaryText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+// ─── COMPONENTE ACORDEÓN ──────────────────────────────────────────────────────
+function AccordionSection({ title, children, initialOpen = false }) {
+  const [open, setOpen] = useState(initialOpen);
+  return (
+    <View style={{ backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12, overflow: 'hidden' }}>
+      <TouchableOpacity
+        onPress={() => setOpen(!open)}
+        style={{ flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: '#f8fafc' }}
+        activeOpacity={0.7}
+      >
+        <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: '#1e293b' }}>{title}</Text>
+        <Text style={{ fontSize: 14, color: '#64748b' }}>{open ? '▲' : '▼'}</Text>
+      </TouchableOpacity>
+      {open && (
+        <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+          {children}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -553,8 +1000,9 @@ function DetalleRow({ label, valor }) {
   );
 }
 
+
 // ─── PANTALLA DE MOVILIZACIONES ───────────────────────────────────────────────
-function PantallaMovilizaciones({ user }) {
+function PantallaMovilizaciones({ user, onOpenMenu }) {
   const [frentes, setFrentes] = useState([]);
   const [equiposBusq, setEquiposBusq] = useState([]);
   const [buscarEq, setBuscarEq] = useState('');
@@ -690,17 +1138,7 @@ function PantallaMovilizaciones({ user }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fdfbfb' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <View style={styles.topHeaderPremium}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Text style={{ fontSize: 18, fontWeight: '900', color: '#000033', letterSpacing: 0.5 }}>
-            <Text style={{ color: '#0067b1', fontStyle: 'italic', fontSize: 24 }}>V</Text> C O N S T R U C T O R A{'\n'}
-            <Text style={{ letterSpacing: 1.5 }}>VIDALSA 27.CA</Text>
-          </Text>
-        </View>
-        <TouchableOpacity>
-          <Text style={{ fontSize: 28, color: '#0067b1', fontWeight: 'bold', marginTop: -8 }}>≡</Text>
-        </TouchableOpacity>
-      </View>
+      <TopHeader onOpenMenu={onOpenMenu} />
 
       <Text style={[styles.dashboardTitle, { marginBottom: 15 }]}>Registro de{'\n'}Movilizaciones</Text>
 
@@ -823,8 +1261,10 @@ function PantallaMovilizaciones({ user }) {
 // ─── APP PRINCIPAL ────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('equipos');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [menuVisible, setMenuVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [equiposCount, setEquiposCount] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -832,9 +1272,11 @@ export default function App() {
       const savedUser = await AsyncStorage.getItem('user');
       const token = await AsyncStorage.getItem('token');
       if (savedUser && token) setUser(JSON.parse(savedUser));
+      const eqs = await leerEquiposLocal();
+      setEquiposCount(eqs.length);
       setLoading(false);
     })();
-  }, []);
+  }, [activeTab]);
 
   const handleLogout = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro?', [
@@ -846,7 +1288,7 @@ export default function App() {
           await AsyncStorage.removeItem('token');
           await AsyncStorage.removeItem('user');
           setUser(null);
-          setActiveTab('equipos');
+          setActiveTab('dashboard');
         }
       }
     ]);
@@ -865,23 +1307,18 @@ export default function App() {
 
   return (
     <View style={{ flex: 1 }}>
+      <DrawerMenu 
+        visible={menuVisible} 
+        onClose={() => setMenuVisible(false)} 
+        onNavigate={setActiveTab} 
+        onLogout={handleLogout}
+        user={user}
+      />
+      
       <View style={{ flex: 1 }}>
-        {activeTab === 'equipos' && <PantallaEquipos user={user} onLogout={handleLogout} />}
-        {activeTab === 'movs'   && <PantallaMovilizaciones user={user} />}
-      </View>
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('equipos')}>
-          <Text style={[styles.tabIcon, activeTab === 'equipos' && styles.tabActive]}>🚛</Text>
-          <Text style={[styles.tabLabel, activeTab === 'equipos' && styles.tabActive]}>Equipos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('movs')}>
-          <Text style={[styles.tabIcon, activeTab === 'movs' && styles.tabActive]}>🔄</Text>
-          <Text style={[styles.tabLabel, activeTab === 'movs' && styles.tabActive]}>Movilizaciones</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={handleLogout}>
-          <Text style={styles.tabIcon}>👤</Text>
-          <Text style={styles.tabLabel}>Perfil</Text>
-        </TouchableOpacity>
+        {activeTab === 'dashboard' && <PantallaDashboard onOpenMenu={() => setMenuVisible(true)} equiposCount={equiposCount} />}
+        {activeTab === 'equipos'   && <PantallaEquipos user={user} onOpenMenu={() => setMenuVisible(true)} />}
+        {activeTab === 'movs'      && <PantallaMovilizaciones user={user} onOpenMenu={() => setMenuVisible(true)} />}
       </View>
     </View>
   );
@@ -898,15 +1335,84 @@ const styles = StyleSheet.create({
   searchBar:    { paddingHorizontal: 16, paddingVertical: 10 },
   searchInput:  { backgroundColor: C.white, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 14, color: C.textPrim },
 
+  // Filter pills and dropdowns
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    gap: 4,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  dropdownItemText: {
+    fontSize: 13,
+    color: '#334155',
+    fontWeight: '500',
+  },
+
+  // Serial text lines in equipment card (match web: "S: XXXX", "M: YYYY", "P: ZZZZ")
+  serialLine: { fontSize: 13, color: '#4a5568', marginBottom: 1 },
+  serialKey:  { fontWeight: '700', color: '#4a5568' },
+
   // Premium UI Styles
   blueCurve: {
     position: 'absolute',
-    bottom: -150,
-    left: -150,
-    width: 700,
-    height: 700,
-    borderRadius: 350,
+    bottom: -Dimensions.get('window').height * 0.35,
+    left: -Dimensions.get('window').width * 0.45,
+    width: Dimensions.get('window').height,
+    height: Dimensions.get('window').height,
+    borderRadius: Dimensions.get('window').height / 2,
     backgroundColor: '#00004d',
+  },
+  blueCurveDashboard: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: -Dimensions.get('window').width * 0.25,
+    width: Dimensions.get('window').width * 0.65,
+    backgroundColor: '#00004d',
+    borderTopRightRadius: Dimensions.get('window').height * 0.4,
+    borderBottomRightRadius: Dimensions.get('window').height * 0.4,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    marginBottom: 2,
+    borderRadius: 10,
+    gap: 4,
+  },
+  menuItemText: {
+    fontSize: 15,
+    color: '#334155',
+    fontWeight: '600',
   },
   loginCardPremium: {
     backgroundColor: '#ffffff',
@@ -1046,4 +1552,41 @@ const styles = StyleSheet.create({
   tabIcon:  { fontSize: 22 },
   tabLabel: { fontSize: 11, color: C.textSec, marginTop: 2, fontWeight: '600' },
   tabActive:{ color: C.blue },
+
+  // PantallaLogin utilities
+  loadingText: { fontSize: 14, color: C.textSec, marginTop: 12 },
+  emptyText:   { fontSize: 14, color: C.textSec, textAlign: 'center' },
+  btnDownload: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  btnDownloadText: { color: C.white, fontWeight: '700', fontSize: 14 },
+
+  // PantallaMovilizaciones utilities
+  label: { fontSize: 13, fontWeight: '700', color: C.textPrim, marginBottom: 6, marginTop: 4 },
+  input: {
+    borderWidth: 1, borderColor: C.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 14, color: C.textPrim, backgroundColor: C.white, marginBottom: 12,
+  },
+  btnPrimary: {
+    backgroundColor: '#00004d', borderRadius: 10,
+    paddingVertical: 15, alignItems: 'center',
+  },
+  btnPrimaryText: { color: C.white, fontWeight: '800', fontSize: 15 },
+  btnSync: { borderRadius: 10, paddingHorizontal: 15, paddingVertical: 10, alignItems: 'center' },
+  btnSyncText: { color: C.white, fontWeight: '700', fontSize: 13 },
+
+  // Configurar IP en login
+  ipBox: {
+    backgroundColor: 'rgba(0,0,77,0.6)', borderRadius: 12, padding: 16,
+    marginTop: 12, width: '100%',
+  },
+  ipInput: {
+    borderWidth: 1, borderColor: '#6ee7b7', borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10,
+    color: '#fff', fontSize: 14, marginBottom: 10,
+  },
+  btnSaveIp: {
+    backgroundColor: '#10b981', borderRadius: 8,
+    paddingVertical: 10, alignItems: 'center',
+  },
+  btnSaveIpText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });
