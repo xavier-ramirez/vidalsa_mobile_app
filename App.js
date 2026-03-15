@@ -298,105 +298,92 @@ function PantallaLogin({ onLogin }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={C.darkBg} />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>🚛 VIDALSA</Text>
-        <Text style={styles.headerSub}>Sistema de Gestión de Flota</Text>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fdfbfb' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fdfbfb" />
+      {/* Blue Curve Background */}
+      <View style={styles.blueCurve} />
+      
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
+        {/* ── Tarjeta Premium de Login ── */}
+        <View style={styles.loginCardPremium}>
+          {/* Fake Logo */}
+          <View style={{ alignItems: 'center', marginBottom: 40, marginTop: 10 }}>
+            <Text style={{ fontSize: 26, fontWeight: '900', color: '#000033', letterSpacing: 0.5, textAlign: 'center', lineHeight: 28 }}>
+              <Text style={{ color: '#0067b1', fontSize: 40, fontStyle: 'italic' }}>V</Text> <Text style={{ fontSize: 12, fontWeight: '700', letterSpacing: 3, color: '#334155' }}>C O N S T R U C T O R A</Text>{'\n'}
+              <Text style={{ letterSpacing: 2 }}>VIDALSA 27.CA</Text>
+            </Text>
+          </View>
 
-        {/* ── Tarjeta de Descarga Sin Login ── */}
-        <View style={styles.downloadCard}>
-          <Text style={styles.downloadCardTitle}>📥 Descargar Datos al Teléfono</Text>
-          <Text style={styles.downloadCardSub}>
-            Descarga los equipos y frentes para trabajar sin internet.{'\n'}
-            Necesitas estar conectado al WiFi de la empresa.
-          </Text>
+          <View style={styles.inputContainerPremium}>
+            <Text style={styles.floatingLabel}>Correo corporativo</Text>
+            <TextInput
+              style={styles.inputPremium}
+              placeholder="fsanchez@cvidalsa27.com"
+              placeholderTextColor="#94a3b8"
+              value={correo}
+              onChangeText={setCorreo}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
 
-          {conteoLocal > 0 && (
-            <View style={styles.syncInfoBox}>
-              <Text style={styles.syncInfoText}>✅ {conteoLocal} equipos guardados localmente</Text>
-              {ultimaSync ? <Text style={styles.syncInfoDate}>Última descarga: {ultimaSync}</Text> : null}
-            </View>
-          )}
-
-          {/* Campo de IP del Servidor */}
-          <TouchableOpacity onPress={() => setMostrarIp(!mostrarIp)} style={styles.ipToggle}>
-            <Text style={styles.ipToggleText}>⚙️ Servidor: {serverIp || DEFAULT_IP}  {mostrarIp ? '▲' : '▼'}</Text>
-          </TouchableOpacity>
-
-          {mostrarIp && (
-            <View style={styles.ipBox}>
-              <Text style={styles.ipLabel}>IP:Puerto del servidor Laravel</Text>
-              <Text style={styles.ipHint}>Ejemplo: 192.168.1.50:8000</Text>
-              <TextInput
-                style={styles.ipInput}
-                placeholder={DEFAULT_IP}
-                placeholderTextColor="#6ee7b7"
-                value={serverIp}
-                onChangeText={setServerIp}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
-              <TouchableOpacity style={styles.btnSaveIp} onPress={guardarIp}>
-                <Text style={styles.btnSaveIpText}>💾 Guardar Servidor</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={styles.inputContainerPremium}>
+            <Text style={styles.floatingLabel}>Contraseña</Text>
+            <TextInput
+              style={styles.inputPremium}
+              placeholder="••••••••"
+              placeholderTextColor="#94a3b8"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
           <TouchableOpacity
-            style={[styles.btnDownload, descargando && { opacity: 0.6 }]}
-            onPress={descargarDatos}
-            disabled={descargando}
-          >
-            {descargando
-              ? <ActivityIndicator color={C.white} />
-              : <Text style={styles.btnDownloadText}>📡 DESCARGAR DATOS AHORA</Text>
-            }
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Tarjeta de Login ── */}
-        <View style={styles.loginCard}>
-          <Text style={styles.cardTitle}>Iniciar Sesión</Text>
-          <Text style={styles.cardSubtitle}>Para registrar movilizaciones</Text>
-
-          <Text style={styles.label}>Correo Electrónico</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="correo@cvidalsa27.com"
-            placeholderTextColor={C.textSec}
-            value={correo}
-            onChangeText={setCorreo}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-          <Text style={styles.label}>Contraseña</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={C.textSec}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity
-            style={[styles.btnPrimary, loading && { opacity: 0.6 }]}
+            style={[styles.btnPremium, loading && { opacity: 0.7 }]}
             onPress={handleLogin}
             disabled={loading}
           >
             {loading
               ? <ActivityIndicator color={C.white} />
-              : <Text style={styles.btnPrimaryText}>INGRESAR</Text>
+              : <Text style={styles.btnPremiumText}>Iniciar sesión</Text>
             }
           </TouchableOpacity>
         </View>
+
+        {/* ── Sección de Datos Locales (Sutil más abajo) ── */}
+        <View style={{ marginTop: 50, alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>Modo Offline</Text>
+          {conteoLocal > 0 && <Text style={{ color: '#cbd5e0', fontSize: 12, marginBottom: 15 }}>{conteoLocal} equipos guardados | Sync: {ultimaSync}</Text>}
+          
+          <TouchableOpacity
+            style={[styles.btnDownload, descargando && { opacity: 0.6 }, { backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.4)', borderWidth: 1 }]}
+            onPress={descargarDatos}
+            disabled={descargando}
+          >
+            {descargando
+              ? <ActivityIndicator color={C.white} />
+              : <Text style={styles.btnDownloadText}>Descargar Datos del Servidor</Text>
+            }
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={() => setMostrarIp(!mostrarIp)} style={{ marginTop: 20 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>⚙️ Configurar Servidor: {serverIp || DEFAULT_IP}</Text>
+          </TouchableOpacity>
+
+          {mostrarIp && (
+            <View style={styles.ipBox}>
+              <TextInput style={styles.ipInput} placeholder={DEFAULT_IP} placeholderTextColor="#6ee7b7" value={serverIp} onChangeText={setServerIp} autoCapitalize="none" keyboardType="url" />
+              <TouchableOpacity style={styles.btnSaveIp} onPress={guardarIp}><Text style={styles.btnSaveIpText}>Guardar IP</Text></TouchableOpacity>
+            </View>
+          )}
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
+
+
 }
 
 // ─── BADGE DE ESTADO ─────────────────────────────────────────────────────────
@@ -456,22 +443,41 @@ function PantallaEquipos({ user, onLogout }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={C.darkBg} />
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>🚛 Equipos</Text>
-          <Text style={styles.headerSub}>{equipos.length} unidades (datos locales)</Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <View style={styles.topHeaderPremium}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={{ fontSize: 18, fontWeight: '900', color: '#000033', letterSpacing: 0.5 }}>
+            <Text style={{ color: '#0067b1', fontStyle: 'italic', fontSize: 24 }}>V</Text> C O N S T R U C T O R A{'\n'}
+            <Text style={{ letterSpacing: 1.5 }}>VIDALSA 27.CA</Text>
+          </Text>
         </View>
-        <TouchableOpacity onPress={onLogout} style={styles.btnLogout}>
-          <Text style={styles.btnLogoutText}>Salir</Text>
+        <TouchableOpacity onPress={onLogout}>
+          <Text style={{ fontSize: 28, color: '#0067b1', fontWeight: 'bold', marginTop: -8 }}>≡</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchBar}>
+      <Text style={styles.dashboardTitle}>Sistema de Gestión de{'\n'}Equipos Operacionales</Text>
+
+      <View style={styles.dashboardWidgetGroup}>
+        <View style={styles.widgetPremium}>
+          <View style={[styles.widgetIconBox, { backgroundColor: '#dbeafe' }]}>
+            <Text style={{ fontSize: 22 }}>🚛</Text>
+          </View>
+          <View style={{ marginLeft: 15, flex: 1 }}>
+            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Equipos en Teléfono</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+              <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#000033' }}>{equipos.length}</Text>
+              <Text style={{ fontSize: 13, color: '#94a3b8', marginLeft: 8 }}>| Sincronizados</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View style={[styles.searchBar, { backgroundColor: 'transparent', borderBottomWidth: 0, paddingHorizontal: 20 }]}>
         <TextInput
-          style={styles.searchInput}
-          placeholder="🔍 Código, placa, serie, frente..."
-          placeholderTextColor={C.textSec}
+          style={[styles.searchInput, { backgroundColor: '#fff', borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: {width:0,height:2}, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }]}
+          placeholder="🔍 Buscar código, frente..."
+          placeholderTextColor="#94a3b8"
           value={busqueda}
           onChangeText={onBuscar}
         />
@@ -682,24 +688,35 @@ function PantallaMovilizaciones({ user }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={C.darkBg} />
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>🔄 Movilizaciones</Text>
-          <Text style={styles.headerSub}>Datos guardados en el teléfono</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fdfbfb' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <View style={styles.topHeaderPremium}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={{ fontSize: 18, fontWeight: '900', color: '#000033', letterSpacing: 0.5 }}>
+            <Text style={{ color: '#0067b1', fontStyle: 'italic', fontSize: 24 }}>V</Text> C O N S T R U C T O R A{'\n'}
+            <Text style={{ letterSpacing: 1.5 }}>VIDALSA 27.CA</Text>
+          </Text>
         </View>
+        <TouchableOpacity>
+          <Text style={{ fontSize: 28, color: '#0067b1', fontWeight: 'bold', marginTop: -8 }}>≡</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={[styles.dashboardTitle, { marginBottom: 15 }]}>Registro de{'\n'}Movilizaciones</Text>
+
+      <View style={{ paddingHorizontal: 20, paddingBottom: 10, flexDirection: 'row', justifyContent: 'flex-end' }}>
         {pendientes.length > 0 && (
           <TouchableOpacity
-            style={[styles.btnSync, sincronizando && { opacity: 0.6 }]}
+            style={[styles.btnSync, sincronizando && { opacity: 0.6 }, { backgroundColor: '#f59e0b', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, shadowColor: '#000', shadowOffset: {width:0,height:2}, shadowOpacity: 0.1, shadowRadius: 4 }]}
             onPress={sincronizar}
             disabled={sincronizando}
           >
             {sincronizando
               ? <ActivityIndicator color={C.white} size="small" />
-              : <Text style={styles.btnSyncText}>⬆ Sincronizar ({pendientes.length})</Text>
+              : <Text style={[styles.btnSyncText, { fontSize: 13 }]}>⬆ Sincronizar ({pendientes.length})</Text>
             }
           </TouchableOpacity>
+
         )}
       </View>
 
@@ -862,8 +879,8 @@ export default function App() {
           <Text style={[styles.tabLabel, activeTab === 'movs' && styles.tabActive]}>Movilizaciones</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.tab} onPress={handleLogout}>
-          <Text style={styles.tabIcon}>🚪</Text>
-          <Text style={styles.tabLabel}>Salir</Text>
+          <Text style={styles.tabIcon}>👤</Text>
+          <Text style={styles.tabLabel}>Perfil</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -878,44 +895,114 @@ const styles = StyleSheet.create({
   headerTitle: { color: C.white, fontSize: 20, fontWeight: 'bold' },
   headerSub:   { color: '#94a3b8', fontSize: 12, marginTop: 2 },
 
-  // Login
-  downloadCard:     { backgroundColor: C.navyBg, borderRadius: 14, padding: 18, marginBottom: 16 },
-  downloadCardTitle:{ color: C.white, fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
-  downloadCardSub:  { color: '#94a3b8', fontSize: 13, lineHeight: 20, marginBottom: 14 },
-  syncInfoBox:      { backgroundColor: 'rgba(16,185,129,0.15)', borderRadius: 8, padding: 10, marginBottom: 12 },
-  syncInfoText:     { color: C.green, fontWeight: 'bold', fontSize: 13 },
-  syncInfoDate:     { color: '#6ee7b7', fontSize: 12, marginTop: 2 },
-  btnDownload:      { backgroundColor: C.green, padding: 14, borderRadius: 10, alignItems: 'center' },
-  btnDownloadText:  { color: C.white, fontWeight: 'bold', fontSize: 14 },
+  searchBar:    { paddingHorizontal: 16, paddingVertical: 10 },
+  searchInput:  { backgroundColor: C.white, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 14, color: C.textPrim },
 
-  // Config IP
-  ipToggle:       { paddingVertical: 8, marginBottom: 10 },
-  ipToggleText:   { color: '#7dd3fc', fontSize: 12, fontWeight: '600' },
-  ipBox:          { backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, padding: 12, marginBottom: 12 },
-  ipLabel:        { color: C.white, fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  ipHint:         { color: '#94a3b8', fontSize: 11, marginBottom: 8 },
-  ipInput:        { backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: 10, fontSize: 14, color: C.white, marginBottom: 8 },
-  btnSaveIp:      { backgroundColor: C.blue, padding: 10, borderRadius: 8, alignItems: 'center' },
-  btnSaveIpText:  { color: C.white, fontWeight: 'bold', fontSize: 13 },
-
-  loginCard:        { backgroundColor: C.white, borderRadius: 16, padding: 22, elevation: 4, shadowColor: '#000', shadowOffset: {width:0,height:2}, shadowOpacity: 0.1, shadowRadius: 8 },
-  cardTitle:        { fontSize: 24, fontWeight: 'bold', color: C.textPrim, marginBottom: 4 },
-  cardSubtitle:     { fontSize: 13, color: C.textSec, marginBottom: 20 },
-
-  label:           { fontSize: 13, fontWeight: '600', color: C.textPrim, marginBottom: 6 },
-  input:           { borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 13, fontSize: 14, color: C.textPrim, backgroundColor: C.bgLight, marginBottom: 14 },
-  btnPrimary:      { backgroundColor: C.blue, padding: 15, borderRadius: 10, alignItems: 'center' },
-  btnPrimaryText:  { color: C.white, fontSize: 15, fontWeight: 'bold' },
-  btnLogout:       { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  btnLogoutText:   { color: C.white, fontSize: 13, fontWeight: '600' },
-  btnSync:         { backgroundColor: C.orange, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  btnSyncText:     { color: C.white, fontSize: 12, fontWeight: 'bold' },
-
-  loadingText:  { color: C.textSec, marginTop: 12, fontSize: 14 },
-  emptyText:    { color: C.textSec, textAlign: 'center', fontSize: 14, lineHeight: 22 },
-
-  searchBar:    { backgroundColor: C.white, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
-  searchInput:  { backgroundColor: C.bgLight, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: C.textPrim },
+  // Premium UI Styles
+  blueCurve: {
+    position: 'absolute',
+    bottom: -150,
+    left: -150,
+    width: 700,
+    height: 700,
+    borderRadius: 350,
+    backgroundColor: '#00004d',
+  },
+  loginCardPremium: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 30,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    marginHorizontal: 10,
+  },
+  inputContainerPremium: {
+    borderWidth: 1,
+    borderColor: '#cbd5e0',
+    borderRadius: 10,
+    marginBottom: 20,
+    position: 'relative',
+    backgroundColor: '#fff',
+  },
+  floatingLabel: {
+    position: 'absolute',
+    top: -9,
+    left: 10,
+    backgroundColor: '#fff',
+    paddingHorizontal: 5,
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  inputPremium: {
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#1e293b',
+  },
+  btnPremium: {
+    backgroundColor: '#00004d',
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  btnPremiumText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  topHeaderPremium: {
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width:0, height:2},
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  dashboardTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#000000',
+    textAlign: 'center',
+    marginTop: 25,
+    marginBottom: 20,
+    lineHeight: 28,
+  },
+  dashboardWidgetGroup: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  widgetPremium: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width:0, height:4},
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    marginBottom: 15,
+  },
+  widgetIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   badge:     { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   badgeText: { fontSize: 10, fontWeight: 'bold' },
