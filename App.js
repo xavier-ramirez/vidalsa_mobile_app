@@ -719,33 +719,31 @@ function PantallaEquipos({ user, onOpenMenu }) {
     const est = getEstado(item.estado);
     return (
       <View style={styles.equipoCard}>
-        {/* TOP ROW: Frente (small upper left) + Tipo (bold upper right) — like web table */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: '#64748b', flexShrink: 1, marginRight: 6, textTransform: 'uppercase', letterSpacing: 0.3 }} numberOfLines={2}>
+        {/* TOP ROW: Frente (small upper left) */}
+        <View style={{ marginBottom: 10 }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.3 }} numberOfLines={2}>
             {item.frente || 'SIN ASIGNAR'}
-          </Text>
-          <Text style={{ fontSize: 13, fontWeight: '800', color: '#000', textAlign: 'right' }} numberOfLines={1}>
-            {item.tipo || '—'}
           </Text>
         </View>
 
         {/* BODY: image placeholder (left) + data column (right) */}
-        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-          {/* placeholder igual al web: icono gris centrado */}
-          <View style={{ width: 70, height: 55, backgroundColor: '#f8fafc', borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' }}>
-            <MaterialIcons name="image-not-supported" size={26} color="#cbd5e1" />
+        <View style={{ flexDirection: 'row', gap: 18, alignItems: 'flex-start' }}>
+          {/* placeholder igual al web: mas grande */}
+          <View style={{ width: 85, height: 85, backgroundColor: '#f8fafc', borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' }}>
+            <MaterialIcons name="image-not-supported" size={34} color="#cbd5e1" />
           </View>
-          {/* Datos igual al web: Marca bold, Modelo gris, S/M/P serials, ID */}
+          {/* Datos igual al web: uno debajo del otro alineados */}
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: '#000', marginBottom: 1 }}>{item.marca || '—'}</Text>
-            <Text style={{ fontSize: 13, color: '#718096', marginBottom: 5 }}>{item.modelo || '—'}</Text>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: '#000', textTransform: 'uppercase', marginBottom: 2 }}>{item.tipo || '—'}</Text>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a', marginBottom: 1 }}>{item.marca || '—'}</Text>
+            <Text style={{ fontSize: 13, color: '#718096', marginBottom: 6 }}>{item.modelo || '—'}</Text>
             {item.serial_chasis ? <Text style={styles.serialLine}><Text style={styles.serialKey}>S: </Text>{item.serial_chasis}</Text> : null}
             {item.serial_motor  ? <Text style={styles.serialLine}><Text style={styles.serialKey}>M: </Text>{item.serial_motor}</Text>  : null}
             {item.placa && item.placa !== 'S/P'
               ? <Text style={[styles.serialLine, { color: '#0067b1' }]}><Text style={[styles.serialKey, { color: '#0067b1' }]}>P: </Text>{item.placa}</Text>
-              : <Text style={{ fontSize: 12, color: '#a0aec0', fontStyle: 'italic' }}>Sin Placa</Text>
+              : <Text style={{ fontSize: 12, color: '#a0aec0', fontStyle: 'italic', marginVertical: 2 }}>Sin Placa</Text>
             }
-            <Text style={{ fontSize: 12, color: '#2d3748', fontWeight: '600', marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: '#2d3748', fontWeight: '600', marginTop: 4 }}>
               <Text style={{ fontWeight: '800' }}>ID: </Text>{item.codigo_patio || '—'}
             </Text>
           </View>
@@ -922,12 +920,12 @@ function PantallaEquipos({ user, onOpenMenu }) {
           <View style={[styles.modalContainer, { maxHeight: '92%' }]}>
             {equipoSel && (
               <>
-                {/* Header azul oscuro: TIPO + Serial (igual que la web) */}
+                {/* Header azul oscuro: CASILLERO + Placa / Serial (igual que la web) */}
                 <View style={{ backgroundColor: '#00004d', paddingHorizontal: 22, paddingVertical: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900', letterSpacing: 0.5 }}>{equipoSel.tipo || 'EQUIPO'}</Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 3 }}>
-                      {equipoSel.serial_chasis ? `Serial: ${equipoSel.serial_chasis}` : equipoSel.codigo_patio || 'Sin código'}
+                    <Text style={{ color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: 0.5 }}>CASILLERO</Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 4 }}>
+                      Placa: {equipoSel.placa || 'S/P'} - Serial: {equipoSel.serial_chasis || 'S/S'}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -939,22 +937,50 @@ function PantallaEquipos({ user, onOpenMenu }) {
                 </View>
 
                 <ScrollView style={{ padding: 16 }} contentContainerStyle={{ paddingBottom: 10 }}>
-                  <AccordionSection title="📍 Ubicación Actual" initialOpen={true}>
+                  <AccordionSection title="📄 Documentación Legal y Soportes" initialOpen={true}>
+                    <DetalleRow label="Titular del Registro" valor={equipoSel.propietario} />
+                    <DetalleRow label="Placa Identificadora" valor={equipoSel.placa} />
+                    <View style={styles.detalleRow}>
+                      <Text style={styles.detalleLabel}>Nro. Documento</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <Text style={styles.detalleValor}>{equipoSel.nro_documento || '—'}</Text>
+                        <MaterialIcons name="picture-as-pdf" size={20} color="#94a3b8" />
+                      </View>
+                    </View>
+                    <View style={styles.detalleRow}>
+                      <Text style={styles.detalleLabel}>Póliza de Seguro</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <Text style={styles.detalleValor}>N/A</Text>
+                        <MaterialIcons name="cloud-upload" size={20} color="#3b82f6" />
+                      </View>
+                    </View>
+                    <View style={styles.detalleRow}>
+                      <Text style={styles.detalleLabel}>Registro ROTC</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <Text style={styles.detalleValor}>N/A</Text>
+                        <MaterialIcons name="cloud-upload" size={20} color="#3b82f6" />
+                      </View>
+                    </View>
+                    <View style={styles.detalleRow}>
+                      <Text style={styles.detalleLabel}>Registro RACDA</Text>
+                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <Text style={styles.detalleValor}>N/A</Text>
+                        <MaterialIcons name="cloud-upload" size={20} color="#3b82f6" />
+                      </View>
+                    </View>
+                  </AccordionSection>
+                  
+                  <AccordionSection title="ℹ️ Información General" initialOpen={false}>
+                    <DetalleRow label="Tipo"          valor={equipoSel.tipo} />
+                    <DetalleRow label="Marca"         valor={equipoSel.marca} />
+                    <DetalleRow label="Modelo"        valor={equipoSel.modelo} />
+                    <DetalleRow label="Año"           valor={equipoSel.anio} />
+                    <DetalleRow label="Categoría"     valor={equipoSel.categoria} />
                     <DetalleRow label="Frente"        valor={equipoSel.frente || 'Sin Asignar'} />
                     <DetalleRow label="Detalle Ubic." valor={equipoSel.detalle_ubi} />
-                  </AccordionSection>
-                  <AccordionSection title="🔩 Seriales e Identificación" initialOpen={true}>
-                    <DetalleRow label="Código / ID"  valor={equipoSel.codigo_patio} />
-                    <DetalleRow label="Nº Etiqueta"  valor={equipoSel.nro_etiqueta} />
-                    <DetalleRow label="Serial Chasis" valor={equipoSel.serial_chasis} />
+                    <DetalleRow label="Código / ID"   valor={equipoSel.codigo_patio} />
+                    <DetalleRow label="Nº Etiqueta"   valor={equipoSel.nro_etiqueta} />
                     <DetalleRow label="Serial Motor"  valor={equipoSel.serial_motor} />
-                    <DetalleRow label="Placa"         valor={equipoSel.placa && equipoSel.placa !== 'S/P' ? equipoSel.placa : 'Sin Placa'} />
-                  </AccordionSection>
-                  <AccordionSection title="ℹ️ Información General">
-                    <DetalleRow label="Marca"     valor={equipoSel.marca} />
-                    <DetalleRow label="Modelo"    valor={equipoSel.modelo} />
-                    <DetalleRow label="Año"       valor={equipoSel.anio} />
-                    <DetalleRow label="Categoría" valor={equipoSel.categoria} />
                   </AccordionSection>
                 </ScrollView>
               </>
