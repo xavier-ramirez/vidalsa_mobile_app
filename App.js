@@ -665,7 +665,6 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
 // ─── PANTALLA DE EQUIPOS ──────────────────────────────────────────────────────
 function PantallaEquipos({ user, onOpenMenu }) {
   const [equipos, setEquipos]         = useState([]);
-  const [frentes, setFrentes]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [busqueda, setBusqueda]       = useState('');
   const [filtroFrente, setFiltroFrente] = useState('');
@@ -673,19 +672,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [filtroEstado, setFiltroEstado] = useState('');
   const [equipoSel, setEquipoSel]     = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-
-  // Unique types derived from loaded equipos
-  const tiposUnicos = useMemo(() => {
-    const set = new Set(equipos.map(e => e.tipo).filter(Boolean));
-    return ['', ...Array.from(set).sort()];
-  }, [equipos]);
-
-  // Stats for consolidado bar — like web sidebar counters
-  const stats = useMemo(() => ({
-    total:         equipos.length,
-    inoperativos:  equipos.filter(e => e.estado === 'INOPERATIVO').length,
-    mantenimiento: equipos.filter(e => e.estado === 'EN MANTENIMIENTO').length,
-  }), [equipos]);
+  const [stats, setStats]             = useState({ total: 0, inoperativos: 0, mantenimiento: 0 });
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -693,6 +680,13 @@ function PantallaEquipos({ user, onOpenMenu }) {
       let data = await leerEquiposLocal(busqueda);
       if (filtroFrente) data = data.filter(e => String(e.frente || '').toLowerCase().includes(filtroFrente.toLowerCase()));
       if (filtroTipo)   data = data.filter(e => String(e.tipo || '').toLowerCase().includes(filtroTipo.toLowerCase()));
+      
+      setStats({
+        total: data.length,
+        inoperativos: data.filter(e => e.estado === 'INOPERATIVO').length,
+        mantenimiento: data.filter(e => e.estado === 'EN MANTENIMIENTO').length,
+      });
+
       if (filtroEstado) data = data.filter(e => e.estado === filtroEstado);
       setEquipos(data);
     } catch (_) {
@@ -703,7 +697,6 @@ function PantallaEquipos({ user, onOpenMenu }) {
   }, [busqueda, filtroFrente, filtroTipo, filtroEstado]);
 
   useEffect(() => { cargar(); }, [cargar]);
-  useEffect(() => { leerFrentesLocal().then(setFrentes); }, []);
 
   // Status map — matches web icons exactly
   const estadoMap = {
