@@ -670,10 +670,9 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [busqueda, setBusqueda]       = useState('');
   const [filtroFrente, setFiltroFrente] = useState('');
   const [filtroTipo, setFiltroTipo]   = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
   const [equipoSel, setEquipoSel]     = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [showFrenteDD, setShowFrenteDD] = useState(false);
-  const [showTipoDD, setShowTipoDD]   = useState(false);
 
   // Unique types derived from loaded equipos
   const tiposUnicos = useMemo(() => {
@@ -688,20 +687,20 @@ function PantallaEquipos({ user, onOpenMenu }) {
     mantenimiento: equipos.filter(e => e.estado === 'EN MANTENIMIENTO').length,
   }), [equipos]);
 
-  // Full equipment list (re-load when filters change)
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
       let data = await leerEquiposLocal(busqueda);
-      if (filtroFrente) data = data.filter(e => e.frente === filtroFrente);
-      if (filtroTipo)   data = data.filter(e => e.tipo   === filtroTipo);
+      if (filtroFrente) data = data.filter(e => String(e.frente || '').toLowerCase().includes(filtroFrente.toLowerCase()));
+      if (filtroTipo)   data = data.filter(e => String(e.tipo || '').toLowerCase().includes(filtroTipo.toLowerCase()));
+      if (filtroEstado) data = data.filter(e => e.estado === filtroEstado);
       setEquipos(data);
     } catch (_) {
       Alert.alert('Error', 'No se pudo leer los datos locales.');
     } finally {
       setLoading(false);
     }
-  }, [busqueda, filtroFrente, filtroTipo]);
+  }, [busqueda, filtroFrente, filtroTipo, filtroEstado]);
 
   useEffect(() => { cargar(); }, [cargar]);
   useEffect(() => { leerFrentesLocal().then(setFrentes); }, []);
@@ -781,63 +780,37 @@ function PantallaEquipos({ user, onOpenMenu }) {
       <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9', gap: 8 }}>
 
         {/* Filtrar Frente */}
-        <View>
-          <TouchableOpacity
-            style={[styles.filterPill, filtroFrente && { borderColor: '#0067b1', backgroundColor: '#e1effa' }]}
-            onPress={() => { setShowFrenteDD(!showFrenteDD); setShowTipoDD(false); }}
-          >
-            <MaterialIcons name="search" size={18} color="#94a3b8" style={{ marginRight: 4 }} />
-            <Text style={{ fontSize: 13, color: filtroFrente ? '#0067b1' : '#94a3b8', flex: 1 }} numberOfLines={1}>
-              {filtroFrente || 'Filtrar Frente...'}
-            </Text>
-            {filtroFrente
-              ? <TouchableOpacity onPress={() => setFiltroFrente('')}><MaterialIcons name="close" size={18} color="#94a3b8" /></TouchableOpacity>
-              : null}
-          </TouchableOpacity>
-          {showFrenteDD && (
-            <View style={styles.dropdownList}>
-              <TouchableOpacity style={styles.dropdownItem} onPress={() => { setFiltroFrente(''); setShowFrenteDD(false); }}>
-                <Text style={[styles.dropdownItemText, { color: '#64748b', fontStyle: 'italic' }]}>TODOS LOS FRENTES</Text>
-              </TouchableOpacity>
-              <ScrollView style={{ maxHeight: 200 }}>
-                {frentes.map(f => (
-                  <TouchableOpacity key={f.id_frente} style={styles.dropdownItem} onPress={() => { setFiltroFrente(f.nombre); setShowFrenteDD(false); }}>
-                    <Text style={[styles.dropdownItemText, filtroFrente === f.nombre && { color: '#0067b1', fontWeight: '700' }]}>{f.nombre}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+        <View style={[styles.filterPill, filtroFrente ? { borderColor: '#0067b1', backgroundColor: '#e1effa' } : {}]}>
+          <MaterialIcons name="search" size={18} color="#94a3b8" style={{ marginRight: 4 }} />
+          <TextInput
+            style={{ flex: 1, fontSize: 13, color: '#1e293b', paddingVertical: 0 }}
+            placeholder="Filtrar Frente..."
+            placeholderTextColor="#94a3b8"
+            value={filtroFrente}
+            onChangeText={setFiltroFrente}
+          />
+          {filtroFrente ? (
+            <TouchableOpacity onPress={() => setFiltroFrente('')}>
+              <MaterialIcons name="close" size={18} color="#94a3b8" />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Filtrar Tipo */}
-        <View>
-          <TouchableOpacity
-            style={[styles.filterPill, filtroTipo && { borderColor: '#0067b1', backgroundColor: '#e1effa' }]}
-            onPress={() => { setShowTipoDD(!showTipoDD); setShowFrenteDD(false); }}
-          >
-            <MaterialIcons name="search" size={18} color="#94a3b8" style={{ marginRight: 4 }} />
-            <Text style={{ fontSize: 13, color: filtroTipo ? '#0067b1' : '#94a3b8', flex: 1 }} numberOfLines={1}>
-              {filtroTipo || 'Filtrar Tipo...'}
-            </Text>
-            {filtroTipo
-              ? <TouchableOpacity onPress={() => setFiltroTipo('')}><MaterialIcons name="close" size={18} color="#94a3b8" /></TouchableOpacity>
-              : null}
-          </TouchableOpacity>
-          {showTipoDD && (
-            <View style={styles.dropdownList}>
-              <TouchableOpacity style={styles.dropdownItem} onPress={() => { setFiltroTipo(''); setShowTipoDD(false); }}>
-                <Text style={[styles.dropdownItemText, { color: '#64748b', fontStyle: 'italic' }]}>TODOS LOS TIPOS</Text>
-              </TouchableOpacity>
-              <ScrollView style={{ maxHeight: 200 }}>
-                {tiposUnicos.filter(Boolean).map(t => (
-                  <TouchableOpacity key={t} style={styles.dropdownItem} onPress={() => { setFiltroTipo(t); setShowTipoDD(false); }}>
-                    <Text style={[styles.dropdownItemText, filtroTipo === t && { color: '#0067b1', fontWeight: '700' }]}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+        <View style={[styles.filterPill, filtroTipo ? { borderColor: '#0067b1', backgroundColor: '#e1effa' } : {}]}>
+          <MaterialIcons name="search" size={18} color="#94a3b8" style={{ marginRight: 4 }} />
+          <TextInput
+            style={{ flex: 1, fontSize: 13, color: '#1e293b', paddingVertical: 0 }}
+            placeholder="Filtrar Tipo..."
+            placeholderTextColor="#94a3b8"
+            value={filtroTipo}
+            onChangeText={setFiltroTipo}
+          />
+          {filtroTipo ? (
+            <TouchableOpacity onPress={() => setFiltroTipo('')}>
+              <MaterialIcons name="close" size={18} color="#94a3b8" />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Buscar Seriales + botón filter_list */}
@@ -873,19 +846,19 @@ function PantallaEquipos({ user, onOpenMenu }) {
           <MaterialIcons name="pie-chart" size={13} color="rgba(255,255,255,0.65)" />
           <Text style={{ fontSize: 9, fontWeight: '800', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, flex: 1 }}>Consolidado de Equipos</Text>
           {/* TOTAL */}
-          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>{stats.total} <Text style={{ fontWeight: '600', fontSize: 11 }}>TOTAL</Text></Text>
-          </View>
+          <TouchableOpacity onPress={() => setFiltroEstado('')} style={[{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }, filtroEstado === '' && { backgroundColor: '#3b82f6', borderColor: '#60a5fa', borderWidth: 1 }]}>
+            <Text style={[{ color: '#fff', fontWeight: '800', fontSize: 13 }, filtroEstado === '' && { color: '#fff' }]}>{stats.total} <Text style={{ fontWeight: '600', fontSize: 11 }}>TOTAL</Text></Text>
+          </TouchableOpacity>
           {/* Inoperativos */}
-          <View style={{ backgroundColor: 'rgba(239,68,68,0.18)', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
-            <MaterialIcons name="cancel" size={13} color="#f87171" />
-            <Text style={{ color: '#f87171', fontWeight: '700', fontSize: 11 }}>{stats.inoperativos} Inoperativos</Text>
-          </View>
+          <TouchableOpacity onPress={() => setFiltroEstado('INOPERATIVO')} style={[{ backgroundColor: 'rgba(239,68,68,0.18)', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }, filtroEstado === 'INOPERATIVO' && { backgroundColor: 'rgba(239,68,68,0.9)' }]}>
+            <MaterialIcons name="cancel" size={13} color={filtroEstado === 'INOPERATIVO' ? '#fff' : '#f87171'} />
+            <Text style={[{ color: '#f87171', fontWeight: '700', fontSize: 11 }, filtroEstado === 'INOPERATIVO' && { color: '#fff' }]}>{stats.inoperativos} Inoperativos</Text>
+          </TouchableOpacity>
           {/* Mantenimiento */}
-          <View style={{ backgroundColor: 'rgba(245,158,11,0.18)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' }}>
-            <MaterialIcons name="engineering" size={13} color="#fbbf24" />
-            <Text style={{ color: '#fbbf24', fontWeight: '700', fontSize: 11 }}>{stats.mantenimiento}</Text>
-          </View>
+          <TouchableOpacity onPress={() => setFiltroEstado('EN MANTENIMIENTO')} style={[{ backgroundColor: 'rgba(245,158,11,0.18)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' }, filtroEstado === 'EN MANTENIMIENTO' && { backgroundColor: 'rgba(245,158,11,0.9)' }]}>
+            <MaterialIcons name="engineering" size={13} color={filtroEstado === 'EN MANTENIMIENTO' ? '#fff' : '#fbbf24'} />
+            <Text style={[{ color: '#fbbf24', fontWeight: '700', fontSize: 11 }, filtroEstado === 'EN MANTENIMIENTO' && { color: '#fff' }]}>{stats.mantenimiento}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
