@@ -259,6 +259,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SQLite from "expo-sqlite";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 
 // Logo local (no depende del servidor)
 const LOGO_LOCAL = require("./assets/logo.webp");
@@ -502,9 +503,9 @@ function LogoVidalsa({ size = 40 }) {
 function TopHeader({ onOpenMenu }) {
   return (
     <View style={styles.topHeaderPremium}>
-      <LogoVidalsa size={32} />
+      <LogoVidalsa size={42} />
       <TouchableOpacity onPress={onOpenMenu} style={{ padding: 8 }}>
-        <MaterialIcons name="menu" size={28} color="#0067b1" />
+        <MaterialIcons name="menu" size={32} color="#0067b1" />
       </TouchableOpacity>
     </View>
   );
@@ -594,7 +595,7 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
               borderBottomColor: "#f1f5f9",
             }}
           >
-            <LogoVidalsa size={30} />
+            <LogoVidalsa size={40} />
             {user && (
               <View
                 style={{
@@ -602,6 +603,7 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
                   alignItems: "center",
                   marginTop: 10,
                   gap: 6,
+                  paddingRight: 10,
                 }}
               >
                 <MaterialIcons
@@ -610,7 +612,7 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
                   color="#64748b"
                 />
                 <Text
-                  style={{ fontSize: 12, color: "#64748b" }}
+                  style={{ fontSize: 13, color: "#64748b", flexShrink: 1 }}
                   numberOfLines={1}
                 >
                   {user.name || user.email || "Usuario"}
@@ -1706,8 +1708,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
         onPress={() => {
           if (equiposSelect.length > 0) toggleSelectEquipo(item);
           else {
-            setEquipoSel(item);
-            setModalVisible(true);
+            handleVerDetalles(item);
           }
         }}
         style={[
@@ -1886,8 +1887,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
               justifyContent: "center",
             }}
             onPress={() => {
-              setEquipoSel(item);
-              setModalVisible(true);
+              handleVerDetalles(item);
             }}
           >
             <MaterialIcons name="visibility" size={22} color="#fff" />
@@ -2861,11 +2861,15 @@ function PantallaEquipos({ user, onOpenMenu }) {
                         <Text style={styles.detalleValor}>
                           {equipoSel.nro_documento || "—"}
                         </Text>
-                        <MaterialIcons
-                          name="picture-as-pdf"
-                          size={20}
-                          color="#94a3b8"
-                        />
+                        {equipoSel.DOC_PROPIEDAD && (
+                            <TouchableOpacity onPress={() => Linking.openURL(equipoSel.DOC_PROPIEDAD)}>
+                                <MaterialIcons
+                                    name="picture-as-pdf"
+                                    size={24}
+                                    color="#ef4444"
+                                />
+                            </TouchableOpacity>
+                        )}
                       </View>
                     </View>
                     <View style={styles.detalleRow}>
@@ -2877,12 +2881,18 @@ function PantallaEquipos({ user, onOpenMenu }) {
                           gap: 10,
                         }}
                       >
-                        <Text style={styles.detalleValor}>N/A</Text>
-                        <MaterialIcons
-                          name="cloud-upload"
-                          size={20}
-                          color="#3b82f6"
-                        />
+                        <Text style={styles.detalleValor}>
+                           {equipoSel.DOC_POLIZA ? "Cargado" : "N/A"}
+                        </Text>
+                        {equipoSel.DOC_POLIZA && (
+                             <TouchableOpacity onPress={() => Linking.openURL(equipoSel.DOC_POLIZA)}>
+                                <MaterialIcons
+                                    name="picture-as-pdf"
+                                    size={24}
+                                    color="#ef4444"
+                                />
+                            </TouchableOpacity>
+                         )}
                       </View>
                     </View>
                     <View style={styles.detalleRow}>
@@ -2894,12 +2904,18 @@ function PantallaEquipos({ user, onOpenMenu }) {
                           gap: 10,
                         }}
                       >
-                        <Text style={styles.detalleValor}>N/A</Text>
-                        <MaterialIcons
-                          name="cloud-upload"
-                          size={20}
-                          color="#3b82f6"
-                        />
+                        <Text style={styles.detalleValor}>
+                           {equipoSel.DOC_ROTC ? "Cargado" : "N/A"}
+                        </Text>
+                        {equipoSel.DOC_ROTC && (
+                             <TouchableOpacity onPress={() => Linking.openURL(equipoSel.DOC_ROTC)}>
+                                <MaterialIcons
+                                    name="picture-as-pdf"
+                                    size={24}
+                                    color="#ef4444"
+                                />
+                            </TouchableOpacity>
+                         )}
                       </View>
                     </View>
                     <View style={styles.detalleRow}>
@@ -2911,12 +2927,18 @@ function PantallaEquipos({ user, onOpenMenu }) {
                           gap: 10,
                         }}
                       >
-                        <Text style={styles.detalleValor}>N/A</Text>
-                        <MaterialIcons
-                          name="cloud-upload"
-                          size={20}
-                          color="#3b82f6"
-                        />
+                        <Text style={styles.detalleValor}>
+                           {equipoSel.DOC_RACDA ? "Cargado" : "N/A"}
+                        </Text>
+                         {equipoSel.DOC_RACDA && (
+                             <TouchableOpacity onPress={() => Linking.openURL(equipoSel.DOC_RACDA)}>
+                                <MaterialIcons
+                                    name="picture-as-pdf"
+                                    size={24}
+                                    color="#ef4444"
+                                />
+                            </TouchableOpacity>
+                         )}
                       </View>
                     </View>
                   </AccordionSection>
