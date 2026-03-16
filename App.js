@@ -623,10 +623,10 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
               <Text style={{ fontSize: 24, color: '#1e3a8a' }}>🚛</Text>
             </View>
             <View style={{ marginLeft: 15, flex: 1 }}>
-              <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Movilizaciones Hoy</Text>
+              <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>Por Confirmar</Text>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 5 }}>
                 <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#0f172a', lineHeight: 32 }}>0</Text>
-                <Text style={{ fontSize: 13, color: '#94a3b8', marginLeft: 8, marginBottom: 4 }}>| 0 Por Confirmar</Text>
+                <Text style={{ fontSize: 13, color: '#94a3b8', marginLeft: 8, marginBottom: 4 }}>| 0 Moviliz. Hoy</Text>
               </View>
             </View>
           </View>
