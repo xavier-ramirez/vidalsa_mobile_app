@@ -1094,7 +1094,7 @@ function PantallaLogin({ onLogin }) {
             style={{ marginTop: 16 }}
           >
             <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>
-              ⚙️ Servidor: {serverIp || DEFAULT_IP}
+              ⚙️ Servidor: {serverIp || DEFAULT_SERVER}
             </Text>
           </TouchableOpacity>
 
