@@ -774,7 +774,7 @@ function PantallaLogin({ onLogin }) {
       setConteoLocal(equipos.length);
       const ip = await AsyncStorage.getItem("server_ip");
       if (ip) setServerIp(ip);
-      else setServerIp(DEFAULT_IP);
+      else setServerIp(DEFAULT_SERVER);
       // Si NO hay datos locales, mostrar formulario de login directamente
       if (equipos.length === 0) setMostrarFormLogin(true);
     })();
