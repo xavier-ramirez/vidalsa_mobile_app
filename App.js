@@ -1566,7 +1566,6 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [modalAnclajesVisible, setModalAnclajesVisible] = useState(false);
   const [modalSubActivosVisible, setModalSubActivosVisible] = useState(false);
   const [modalNuevoEquipoVisible, setModalNuevoEquipoVisible] = useState(false);
-
   // Documentos checkboxes
   const [chkPropiedad, setChkPropiedad] = useState(false);
   const [chkPoliza, setChkPoliza] = useState(false);
@@ -4034,7 +4033,7 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
         );
       }
     } catch (e) {
-      console.log("Error history:", e.message);
+      // Ignorar error silente de red en carga de historial (modo offline)
     } finally {
       setCargandoHist(false);
     }
