@@ -265,20 +265,24 @@ import * as Linking from "expo-linking";
 const LOGO_LOCAL = require("./assets/logo.webp");
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
-// La IP se guarda en el teléfono y se puede cambiar desde la app.
-// Por defecto intenta con la IP conocida del servidor.
-const DEFAULT_IP = "192.168.250.4:8000";
+// URL de producción por defecto. Si el usuario configura una IP local, se usará http://.
+// Si el valor guardado contiene un dominio (punto, no IP), se usa https://.
+const DEFAULT_SERVER = "vidalsa-web.mnsxjk.easypanel.host";
 
 async function getApiBase() {
   const saved = await AsyncStorage.getItem("server_ip");
-  let ip = saved && saved.trim() ? saved.trim() : DEFAULT_IP;
+  let host = saved && saved.trim() ? saved.trim() : DEFAULT_SERVER;
 
-  // Quitar http:// o https:// si el usuario lo escribió (lo ponemos nosotros)
-  ip = ip.replace(/^https?:\/\//i, "");
-  // Quitar barras al final: 192.168.250.4:8000/ → 192.168.250.4:8000
-  ip = ip.replace(/\/+$/, "");
+  // Quitar protocolo existente (lo determinamos nosotros)
+  host = host.replace(/^https?:\/\//i, "");
+  // Quitar barras al final
+  host = host.replace(/\/+$/, "");
 
-  return `http://${ip}/api/mobile`;
+  // Usar HTTPS si es un dominio (tiene letras, no solo numeros y puntos)
+  const isLocalIp = /^[\d.]+:\d+$|^localhost/.test(host);
+  const protocol = isLocalIp ? "http" : "https";
+
+  return `${protocol}://${host}/api/mobile`;
 }
 
 // ─── COLORES ──────────────────────────────────────────────────────────────────
