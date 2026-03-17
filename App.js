@@ -1,4 +1,26 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  FlatList,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Modal,
+  RefreshControl,
+  Platform,
+  Image,
+  Dimensions,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SQLite from "expo-sqlite";
+import { MaterialIcons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 
 // ─── SISTEMA DE ALERTAS MODERNAS ───
 const AlertEmitter = {
@@ -238,28 +260,6 @@ function ModernAlertModal() {
 }
 
 // ─── FIN ALERTA MODERNA ───
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  FlatList,
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Modal,
-  RefreshControl,
-  Platform,
-  Image,
-  Dimensions,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SQLite from "expo-sqlite";
-import { MaterialIcons } from "@expo/vector-icons";
-import * as Linking from "expo-linking";
 
 // Logo local (no depende del servidor)
 const LOGO_LOCAL = require("./assets/logo.webp");
@@ -279,7 +279,7 @@ async function getApiBase() {
   host = host.replace(/\/+$/, "");
 
   // Usar HTTPS si es un dominio (tiene letras, no solo numeros y puntos)
-  const isLocalIp = /^[\d.]+:\d+$|^localhost/.test(host);
+  const isLocalIp = /^[\d\.]+(:\d+)?$/.test(host) || /^localhost(:\d+)?$/.test(host);
   const protocol = isLocalIp ? "http" : "https";
 
   return `${protocol}://${host}/api/mobile`;
