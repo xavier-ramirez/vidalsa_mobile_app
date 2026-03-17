@@ -1729,7 +1729,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
           </View>
         )}
         {/* TOP ROW: Frente (small upper left) */}
-        <View style={{ marginBottom: 10 }}>
+        <View style={{ marginBottom: 4 }}>
           <Text
             style={{
               fontSize: 10,
@@ -1751,8 +1751,8 @@ function PantallaEquipos({ user, onOpenMenu }) {
           {/* placeholder igual al web: mas grande */}
           <View
             style={{
-              width: 85,
-              height: 85,
+              width: 65,
+              height: 65,
               backgroundColor: "#f8fafc",
               borderRadius: 6,
               borderWidth: 1,
@@ -1763,7 +1763,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
           >
             <MaterialIcons
               name="image-not-supported"
-              size={34}
+              size={28}
               color="#cbd5e1"
             />
           </View>
@@ -1824,17 +1824,6 @@ function PantallaEquipos({ user, onOpenMenu }) {
                 Sin Placa
               </Text>
             )}
-            <Text
-              style={{
-                fontSize: 12,
-                color: "#2d3748",
-                fontWeight: "600",
-                marginTop: 4,
-              }}
-            >
-              <Text style={{ fontWeight: "800" }}>ID: </Text>
-              {item.codigo_patio || "—"}
-            </Text>
           </View>
         </View>
 
@@ -1843,10 +1832,10 @@ function PantallaEquipos({ user, onOpenMenu }) {
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginTop: 12,
+            marginTop: 6,
             borderTopWidth: 1,
             borderTopColor: "#f1f5f9",
-            paddingTop: 10,
+            paddingTop: 8,
             gap: 10,
           }}
         >
@@ -2746,6 +2735,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
         </View>
       ) : (
         <FlatList
+          showsVerticalScrollIndicator={true}
           data={equipos}
           keyExtractor={(item) => String(item.id_equipo)}
           renderItem={renderItem}
