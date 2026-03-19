@@ -904,41 +904,6 @@ function PantallaLogin({ onLogin }) {
           {/* ── Modo Offline: botón principal si hay datos ── */}
           {conteoLocal > 0 && !mostrarFormLogin && (
             <View style={{ alignItems: "center" }}>
-              {/* Info de datos locales */}
-              <View
-                style={{
-                  backgroundColor: "#f0fdf4",
-                  borderRadius: 10,
-                  padding: 12,
-                  width: "100%",
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: "#bbf7d0",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "700",
-                    color: "#166534",
-                    textAlign: "center",
-                  }}
-                >
-                  📦 {conteoLocal} equipos disponibles offline
-                </Text>
-                {ultimaSync ? (
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      color: "#4ade80",
-                      textAlign: "center",
-                      marginTop: 3,
-                    }}
-                  >
-                    Última sincronización: {ultimaSync}
-                  </Text>
-                ) : null}
-              </View>
 
               {/* BOTÓN PRINCIPAL: Continuar sin conexión */}
               <TouchableOpacity
@@ -1089,31 +1054,6 @@ function PantallaLogin({ onLogin }) {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => setMostrarIp(!mostrarIp)}
-            style={{ marginTop: 16 }}
-          >
-            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>
-              ⚙️ Servidor: {serverIp || DEFAULT_SERVER}
-            </Text>
-          </TouchableOpacity>
-
-          {mostrarIp && (
-            <View style={styles.ipBox}>
-              <TextInput
-                style={styles.ipInput}
-                placeholder={DEFAULT_SERVER}
-                placeholderTextColor="#6ee7b7"
-                value={serverIp}
-                onChangeText={setServerIp}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
-              <TouchableOpacity style={styles.btnSaveIp} onPress={guardarIp}>
-                <Text style={styles.btnSaveIpText}>Guardar Servidor</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -1206,92 +1146,7 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
             </View>
           </View>
 
-          <View style={styles.widgetPremium}>
-            <View
-              style={[styles.widgetIconBox, { backgroundColor: "#fef3c7" }]}
-            >
-              <Text style={{ fontSize: 24, color: "#d97706" }}>🔔</Text>
-            </View>
-            <View style={{ marginLeft: 15, flex: 1 }}>
-              <Text
-                style={{ color: "#64748b", fontSize: 13, fontWeight: "600" }}
-              >
-                Alertas Documentos
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "baseline",
-                  marginTop: 5,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 32,
-                    fontWeight: "bold",
-                    color: "#0f172a",
-                    lineHeight: 32,
-                  }}
-                >
-                  79
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: "#0f172a",
-                    fontWeight: "700",
-                    marginLeft: 8,
-                    marginBottom: 4,
-                  }}
-                >
-                  | Por Renovar
-                </Text>
-              </View>
-            </View>
-          </View>
 
-          <View style={styles.widgetPremium}>
-            <View
-              style={[styles.widgetIconBox, { backgroundColor: "#f1f5f9" }]}
-            >
-              <Text style={{ fontSize: 24 }}>📱</Text>
-            </View>
-            <View style={{ marginLeft: 15, flex: 1 }}>
-              <Text
-                style={{ color: "#64748b", fontSize: 13, fontWeight: "600" }}
-              >
-                Equipos Offline Guardados
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "baseline",
-                  marginTop: 5,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 32,
-                    fontWeight: "bold",
-                    color: "#0f172a",
-                    lineHeight: 32,
-                  }}
-                >
-                  {equiposCount}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: "#94a3b8",
-                    marginLeft: 8,
-                    marginBottom: 4,
-                  }}
-                >
-                  | Sincronizados
-                </Text>
-              </View>
-            </View>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -1301,6 +1156,7 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
 // ─── PANTALLA DE EQUIPOS ──────────────────────────────────────────────────────
 function PantallaEquipos({ user, onOpenMenu }) {
   const [equipos, setEquipos] = useState([]);
+  const [equiposTodos, setEquiposTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroFrente, setFiltroFrente] = useState("");
@@ -1418,16 +1274,19 @@ function PantallaEquipos({ user, onOpenMenu }) {
       // Nota: Si rotc/racda no están en la data offline, este filtro podría devolver vacío.
       // Dependerá de tu esquema SQLite.
 
+      // Calcular stats ANTES de filtrar por estado (para que los conteos sean del total)
+      const allData = data;
       setStats({
-        total: data.length,
-        inoperativos: data.filter((e) => e.estado === "INOPERATIVO").length,
-        mantenimiento: data.filter((e) => e.estado === "EN MANTENIMIENTO")
-          .length,
+        total: allData.length,
+        inoperativos: allData.filter((e) => e.estado === "INOPERATIVO").length,
+        mantenimiento: allData.filter((e) => e.estado === "EN MANTENIMIENTO").length,
       });
 
-      if (filtroEstado) data = data.filter((e) => e.estado === filtroEstado);
+      // Guardar TODOS los equipos (filtroEstado se aplica en memoria via useMemo)
+      setEquiposTodos(data);
       setEquipos(data);
-    } catch (_) {
+    } catch (err) {
+      console.warn("Error al cargar equipos:", err);
       showModernAlert("Error", "No se pudo leer los datos locales.");
     } finally {
       setLoading(false);
@@ -1436,7 +1295,6 @@ function PantallaEquipos({ user, onOpenMenu }) {
     busqueda,
     filtroFrente,
     filtroTipo,
-    filtroEstado,
     advModelo,
     advMarca,
     advAnio,
@@ -1447,6 +1305,13 @@ function PantallaEquipos({ user, onOpenMenu }) {
     chkRotc,
     chkRacda,
   ]);
+
+  // Aplicar filtro de estado EN MEMORIA (sin re-query SQLite — evita crash)
+  const equiposFiltrados = useMemo(() => {
+    if (!filtroEstado) return equiposTodos;
+    return equiposTodos.filter((e) => e.estado === filtroEstado);
+  }, [equiposTodos, filtroEstado]);
+
 
   useEffect(() => {
     cargar();
@@ -2511,7 +2376,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
       ) : (
         <FlatList
           showsVerticalScrollIndicator={true}
-          data={equipos}
+          data={equiposFiltrados}
           keyExtractor={(item) => String(item.id_equipo)}
           renderItem={renderItem}
           ListEmptyComponent={
@@ -2523,7 +2388,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
                   { marginTop: 10, textAlign: "center" },
                 ]}
               >
-                {busqueda || filtroFrente || filtroTipo
+                {busqueda || filtroFrente || filtroTipo || filtroEstado
                   ? "Sin resultados con estos filtros."
                   : "Seleccione un filtro para ver los equipos."}
               </Text>
