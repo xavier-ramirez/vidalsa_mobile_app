@@ -1200,6 +1200,20 @@ function PantallaEquipos({ user, onOpenMenu }) {
     });
   };
 
+  // ── VER DETALLES DE EQUIPO ──
+  const handleVerDetalles = (item) => {
+    setEquipoSel(item);
+    setModalVisible(true);
+  };
+
+  // ── DROPDOWNS PARA FILTROS ──
+  const [showDropFrente, setShowDropFrente] = useState(false);
+  const [showDropTipo, setShowDropTipo] = useState(false);
+  const [frentesLista, setFrentesLista] = useState([]);
+  const [tiposLista, setTiposLista] = useState([]);
+  const [busqDropFrente, setBusqDropFrente] = useState("");
+  const [busqDropTipo, setBusqDropTipo] = useState("");
+
   const clearAdvancedFilters = () => {
     setAdvModelo("");
     setAdvMarca("");
@@ -1217,17 +1231,20 @@ function PantallaEquipos({ user, onOpenMenu }) {
     setLoading(true);
     try {
       let data = await leerEquiposLocal(busqueda);
+
+      // Extraer frentes y tipos únicos para los dropdowns
+      const frentesSet = [...new Set(data.map(e => e.frente || "").filter(Boolean))].sort();
+      const tiposSet = [...new Set(data.map(e => e.tipo || "").filter(Boolean))].sort();
+      setFrentesLista(frentesSet);
+      setTiposLista(tiposSet);
+
       if (filtroFrente)
         data = data.filter((e) =>
-          String(e.frente || "")
-            .toLowerCase()
-            .includes(filtroFrente.toLowerCase()),
+          String(e.frente || "") === filtroFrente,
         );
       if (filtroTipo)
         data = data.filter((e) =>
-          String(e.tipo || "")
-            .toLowerCase()
-            .includes(filtroTipo.toLowerCase()),
+          String(e.tipo || "") === filtroTipo,
         );
 
       // Aplicar Filtros Avanzados a la data local si están definidos
@@ -1557,8 +1574,9 @@ function PantallaEquipos({ user, onOpenMenu }) {
           gap: 8,
         }}
       >
-        {/* Filtrar Frente */}
-        <View
+        {/* Filtrar Frente — Dropdown */}
+        <TouchableOpacity
+          onPress={() => { setShowDropFrente(true); setBusqDropFrente(""); }}
           style={[
             styles.filterPill,
             filtroFrente
@@ -1567,32 +1585,26 @@ function PantallaEquipos({ user, onOpenMenu }) {
           ]}
         >
           <MaterialIcons
-            name="search"
+            name="business"
             size={18}
-            color="#94a3b8"
-            style={{ marginRight: 4 }}
+            color={filtroFrente ? "#0067b1" : "#94a3b8"}
+            style={{ marginRight: 6 }}
           />
-          <TextInput
-            style={{
-              flex: 1,
-              fontSize: 13,
-              color: "#1e293b",
-              paddingVertical: 0,
-            }}
-            placeholder="Filtrar Frente..."
-            placeholderTextColor="#94a3b8"
-            value={filtroFrente}
-            onChangeText={setFiltroFrente}
-          />
+          <Text style={{ flex: 1, fontSize: 13, color: filtroFrente ? "#0067b1" : "#94a3b8" }}>
+            {filtroFrente || "Filtrar Frente..."}
+          </Text>
           {filtroFrente ? (
-            <TouchableOpacity onPress={() => setFiltroFrente("")}>
+            <TouchableOpacity onPress={() => setFiltroFrente("")} hitSlop={{top:10,bottom:10,left:10,right:10}}>
               <MaterialIcons name="close" size={18} color="#94a3b8" />
             </TouchableOpacity>
-          ) : null}
-        </View>
+          ) : (
+            <MaterialIcons name="expand-more" size={20} color="#94a3b8" />
+          )}
+        </TouchableOpacity>
 
-        {/* Filtrar Tipo */}
-        <View
+        {/* Filtrar Tipo — Dropdown */}
+        <TouchableOpacity
+          onPress={() => { setShowDropTipo(true); setBusqDropTipo(""); }}
           style={[
             styles.filterPill,
             filtroTipo
@@ -1601,29 +1613,22 @@ function PantallaEquipos({ user, onOpenMenu }) {
           ]}
         >
           <MaterialIcons
-            name="search"
+            name="agriculture"
             size={18}
-            color="#94a3b8"
-            style={{ marginRight: 4 }}
+            color={filtroTipo ? "#0067b1" : "#94a3b8"}
+            style={{ marginRight: 6 }}
           />
-          <TextInput
-            style={{
-              flex: 1,
-              fontSize: 13,
-              color: "#1e293b",
-              paddingVertical: 0,
-            }}
-            placeholder="Filtrar Tipo..."
-            placeholderTextColor="#94a3b8"
-            value={filtroTipo}
-            onChangeText={setFiltroTipo}
-          />
+          <Text style={{ flex: 1, fontSize: 13, color: filtroTipo ? "#0067b1" : "#94a3b8" }}>
+            {filtroTipo || "Filtrar Tipo..."}
+          </Text>
           {filtroTipo ? (
-            <TouchableOpacity onPress={() => setFiltroTipo("")}>
+            <TouchableOpacity onPress={() => setFiltroTipo("")} hitSlop={{top:10,bottom:10,left:10,right:10}}>
               <MaterialIcons name="close" size={18} color="#94a3b8" />
             </TouchableOpacity>
-          ) : null}
-        </View>
+          ) : (
+            <MaterialIcons name="expand-more" size={20} color="#94a3b8" />
+          )}
+        </TouchableOpacity>
 
         {/* Buscar Seriales + botón filter_list */}
         <View style={{ flexDirection: "row", gap: 8 }}>
@@ -3580,6 +3585,103 @@ function PantallaEquipos({ user, onOpenMenu }) {
           </View>
         </View>
       </Modal>
+
+      {/* ── MODAL DROPDOWN - FRENTE ── */}
+      <Modal visible={showDropFrente} transparent animationType="fade" onRequestClose={() => setShowDropFrente(false)}>
+        <View style={{ flex:1, backgroundColor:"rgba(0,0,0,0.5)", justifyContent:"center", padding:20 }}>
+          <View style={{ backgroundColor:"#fff", borderRadius:16, maxHeight:"70%", overflow:"hidden" }}>
+            <View style={{ backgroundColor:"#00004d", padding:16, flexDirection:"row", alignItems:"center", gap:10 }}>
+              <MaterialIcons name="business" size={22} color="#fff" />
+              <Text style={{ color:"#fff", fontSize:16, fontWeight:"700", flex:1 }}>Seleccionar Frente</Text>
+              <TouchableOpacity onPress={() => setShowDropFrente(false)}>
+                <MaterialIcons name="close" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ paddingHorizontal:14, paddingTop:10, paddingBottom:6 }}>
+              <View style={[styles.filterPill, { marginBottom:6 }]}>
+                <MaterialIcons name="search" size={18} color="#94a3b8" style={{marginRight:4}} />
+                <TextInput
+                  style={{ flex:1, fontSize:13, color:"#1e293b", paddingVertical:0 }}
+                  placeholder="Buscar frente..."
+                  placeholderTextColor="#94a3b8"
+                  value={busqDropFrente}
+                  onChangeText={setBusqDropFrente}
+                  autoFocus
+                />
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => { setFiltroFrente(""); setShowDropFrente(false); }}
+              style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: !filtroFrente ? "#eff6ff" : "#fff" }}
+            >
+              <Text style={{ fontSize:14, fontWeight: !filtroFrente ? "700" : "500", color: !filtroFrente ? "#0067b1" : "#64748b" }}>Todos los Frentes</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={frentesLista.filter(f => !busqDropFrente || f.toLowerCase().includes(busqDropFrente.toLowerCase()))}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => { setFiltroFrente(item); setShowDropFrente(false); }}
+                  style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: filtroFrente === item ? "#eff6ff" : "#fff", flexDirection:"row", justifyContent:"space-between", alignItems:"center" }}
+                >
+                  <Text style={{ fontSize:13, color: filtroFrente === item ? "#0067b1" : "#334155", fontWeight: filtroFrente === item ? "700" : "500", flex:1 }} numberOfLines={2}>{item}</Text>
+                  {filtroFrente === item && <MaterialIcons name="check" size={18} color="#0067b1" />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={{ padding:20, textAlign:"center", color:"#94a3b8" }}>Sin resultados</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── MODAL DROPDOWN - TIPO ── */}
+      <Modal visible={showDropTipo} transparent animationType="fade" onRequestClose={() => setShowDropTipo(false)}>
+        <View style={{ flex:1, backgroundColor:"rgba(0,0,0,0.5)", justifyContent:"center", padding:20 }}>
+          <View style={{ backgroundColor:"#fff", borderRadius:16, maxHeight:"70%", overflow:"hidden" }}>
+            <View style={{ backgroundColor:"#00004d", padding:16, flexDirection:"row", alignItems:"center", gap:10 }}>
+              <MaterialIcons name="agriculture" size={22} color="#fff" />
+              <Text style={{ color:"#fff", fontSize:16, fontWeight:"700", flex:1 }}>Seleccionar Tipo</Text>
+              <TouchableOpacity onPress={() => setShowDropTipo(false)}>
+                <MaterialIcons name="close" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ paddingHorizontal:14, paddingTop:10, paddingBottom:6 }}>
+              <View style={[styles.filterPill, { marginBottom:6 }]}>
+                <MaterialIcons name="search" size={18} color="#94a3b8" style={{marginRight:4}} />
+                <TextInput
+                  style={{ flex:1, fontSize:13, color:"#1e293b", paddingVertical:0 }}
+                  placeholder="Buscar tipo..."
+                  placeholderTextColor="#94a3b8"
+                  value={busqDropTipo}
+                  onChangeText={setBusqDropTipo}
+                  autoFocus
+                />
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => { setFiltroTipo(""); setShowDropTipo(false); }}
+              style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: !filtroTipo ? "#eff6ff" : "#fff" }}
+            >
+              <Text style={{ fontSize:14, fontWeight: !filtroTipo ? "700" : "500", color: !filtroTipo ? "#0067b1" : "#64748b" }}>Todos los Tipos</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={tiposLista.filter(t => !busqDropTipo || t.toLowerCase().includes(busqDropTipo.toLowerCase()))}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => { setFiltroTipo(item); setShowDropTipo(false); }}
+                  style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: filtroTipo === item ? "#eff6ff" : "#fff", flexDirection:"row", justifyContent:"space-between", alignItems:"center" }}
+                >
+                  <Text style={{ fontSize:13, color: filtroTipo === item ? "#0067b1" : "#334155", fontWeight: filtroTipo === item ? "700" : "500" }}>{item}</Text>
+                  {filtroTipo === item && <MaterialIcons name="check" size={18} color="#0067b1" />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={{ padding:20, textAlign:"center", color:"#94a3b8" }}>Sin resultados</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
