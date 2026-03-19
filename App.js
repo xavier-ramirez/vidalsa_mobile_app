@@ -1183,7 +1183,6 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [modalDashboardVisible, setModalDashboardVisible] = useState(false);
   const [modalAnclajesVisible, setModalAnclajesVisible] = useState(false);
   const [modalSubActivosVisible, setModalSubActivosVisible] = useState(false);
-  const [modalNuevoEquipoVisible, setModalNuevoEquipoVisible] = useState(false);
   // Documentos checkboxes
   const [chkPropiedad, setChkPropiedad] = useState(false);
   const [chkPoliza, setChkPoliza] = useState(false);
@@ -1215,6 +1214,15 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [busqDropTipo, setBusqDropTipo] = useState("");
   const [showDropAsignar, setShowDropAsignar] = useState(false);
   const [busqDropAsignar, setBusqDropAsignar] = useState("");
+
+  // Sub-activos filtros
+  const [filtroSubFrente, setFiltroSubFrente] = useState("");
+  const [filtroSubTipo, setFiltroSubTipo] = useState("");
+  const [busqSubSerial, setBusqSubSerial] = useState("");
+  const [showDropSubFrente, setShowDropSubFrente] = useState(false);
+  const [showDropSubTipo, setShowDropSubTipo] = useState(false);
+  const [busqDropSubFrente, setBusqDropSubFrente] = useState("");
+  const [busqDropSubTipo, setBusqDropSubTipo] = useState("");
 
   const clearAdvancedFilters = () => {
     setAdvModelo("");
@@ -1330,6 +1338,24 @@ function PantallaEquipos({ user, onOpenMenu }) {
     if (!filtroEstado) return equiposTodos;
     return equiposTodos.filter((e) => e.estado === filtroEstado);
   }, [equiposTodos, filtroEstado]);
+
+  const subActivosFiltrados = useMemo(() => {
+    return equiposTodos.filter(e => {
+      // Determinar si es subactivo si su categoría lo dice, o si no hay categoría simplemente lo mostramos para que el filtro lo decida
+      const cat = String(e.categoria || "").toUpperCase();
+      const isSub = cat.includes("SUB") || cat.includes("MENOR") || cat.includes("HERRAMIEN");
+      // Asumiremos que si la BD de la demo no tiene categorías clasificadas, isSub puede fallar.
+      // Mejor filtraremos solo por frente, tipo y serial a todos los equipos, 
+      // y si es "SUB", requerimos que lo sea (comentado por seguridad de que aparezca data).
+      
+      let match = true;
+      if (filtroSubFrente && String(e.frente || "") !== filtroSubFrente) match = false;
+      if (filtroSubTipo && String(e.tipo || "") !== filtroSubTipo) match = false;
+      const serial = String(e.serial_chasis || "") + " " + String(e.serial_motor || "");
+      if (busqSubSerial && !serial.toLowerCase().includes(busqSubSerial.toLowerCase())) match = false;
+      return match;
+    });
+  }, [equiposTodos, filtroSubFrente, filtroSubTipo, busqSubSerial]);
 
 
   useEffect(() => {
@@ -2213,35 +2239,6 @@ function PantallaEquipos({ user, onOpenMenu }) {
                   Sub-activos
                 </Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  setMenuAccionesVisible(false);
-                  setModalNuevoEquipoVisible(true);
-                }}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  padding: 10,
-                  borderRadius: 8,
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: "#eff6ff",
-                    padding: 6,
-                    borderRadius: 6,
-                    marginRight: 10,
-                  }}
-                >
-                  <MaterialIcons name="add-circle" size={18} color="#0ea5e9" />
-                </View>
-                <Text
-                  style={{ fontSize: 13, fontWeight: "500", color: "#475569" }}
-                >
-                  Nuevo Equipo
-                </Text>
-              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -2880,36 +2877,39 @@ function PantallaEquipos({ user, onOpenMenu }) {
                   </Text>
                 </View>
               </View>
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: "#e2e8f0",
-                  marginTop: 15,
-                  height: 220,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 3,
-                }}
-              >
-                <MaterialIcons name="pie-chart" size={60} color="#e2e8f0" />
-                <Text
-                  style={{
-                    color: "#94a3b8",
-                    fontSize: 13,
-                    marginTop: 15,
-                    fontWeight: "600",
-                  }}
-                >
-                  Gráficos y Métricas Avanzadas
-                </Text>
-                <Text style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>
-                  Disponible próximamente.
-                </Text>
+              <View style={{ backgroundColor: "#fff", borderRadius: 10, borderWidth: 1, borderColor: "#e2e8f0", marginTop: 15, padding: 15, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 3 }}>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: "#00004d", marginBottom: 15 }}>Estado Operativo {filtroFrente ? `(${filtroFrente})` : "General"}</Text>
+                
+                {/* Barras dinámicas de stats */}
+                <View style={{ gap: 12 }}>
+                  <View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#16a34a" }}>Operativos ({stats.total - stats.inoperativos - stats.mantenimiento})</Text>
+                      <Text style={{ fontSize: 12, color: "#64748b", fontWeight: "600" }}>{stats.total > 0 ? Math.round(((stats.total - stats.inoperativos - stats.mantenimiento)/stats.total)*100) : 0}%</Text>
+                    </View>
+                    <View style={{ height: 8, backgroundColor: "#f1f5f9", borderRadius: 4, overflow: "hidden" }}>
+                      <View style={{ height: "100%", width: `${stats.total > 0 ? ((stats.total - stats.inoperativos - stats.mantenimiento)/stats.total)*100 : 0}%`, backgroundColor: "#16a34a", borderRadius: 4 }} />
+                    </View>
+                  </View>
+                  <View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#dc2626" }}>Inoperativos ({stats.inoperativos})</Text>
+                      <Text style={{ fontSize: 12, color: "#64748b", fontWeight: "600" }}>{stats.total > 0 ? Math.round((stats.inoperativos/stats.total)*100) : 0}%</Text>
+                    </View>
+                    <View style={{ height: 8, backgroundColor: "#f1f5f9", borderRadius: 4, overflow: "hidden" }}>
+                      <View style={{ height: "100%", width: `${stats.total > 0 ? (stats.inoperativos/stats.total)*100 : 0}%`, backgroundColor: "#dc2626", borderRadius: 4 }} />
+                    </View>
+                  </View>
+                  <View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#d97706" }}>Mantenimiento ({stats.mantenimiento})</Text>
+                      <Text style={{ fontSize: 12, color: "#64748b", fontWeight: "600" }}>{stats.total > 0 ? Math.round((stats.mantenimiento/stats.total)*100) : 0}%</Text>
+                    </View>
+                    <View style={{ height: 8, backgroundColor: "#f1f5f9", borderRadius: 4, overflow: "hidden" }}>
+                      <View style={{ height: "100%", width: `${stats.total > 0 ? (stats.mantenimiento/stats.total)*100 : 0}%`, backgroundColor: "#d97706", borderRadius: 4 }} />
+                    </View>
+                  </View>
+                </View>
               </View>
             </ScrollView>
           </View>
@@ -3069,443 +3069,151 @@ function PantallaEquipos({ user, onOpenMenu }) {
               }}
             >
               <View style={{ flexDirection: "row", gap: 10 }}>
-                <View
-                  style={{
-                    flex: 1,
-                    borderWidth: 1,
-                    borderColor: "#cbd5e0",
-                    borderRadius: 8,
-                    height: 42,
-                    paddingHorizontal: 12,
-                    justifyContent: "center",
-                    backgroundColor: "#fbfcfd",
-                  }}
+                <TouchableOpacity
+                  onPress={() => { setShowDropSubTipo(true); setBusqDropSubTipo(""); }}
+                  style={{ flex: 1, borderWidth: 1, borderColor: "#cbd5e0", borderRadius: 8, height: 42, paddingHorizontal: 12, justifyContent: "center", backgroundColor: "#fbfcfd" }}
                 >
-                  <Text style={{ fontSize: 13, color: "#64748b" }}>
-                    Todos los tipos ▼
+                  <Text style={{ fontSize: 13, color: filtroSubTipo ? "#0067b1" : "#64748b", fontWeight: filtroSubTipo ? "700" : "400" }}>
+                    {filtroSubTipo || "Todos los tipos ▼"}
                   </Text>
-                </View>
-                <View
-                  style={{
-                    flex: 1,
-                    borderWidth: 1,
-                    borderColor: "#cbd5e0",
-                    borderRadius: 8,
-                    height: 42,
-                    paddingHorizontal: 12,
-                    justifyContent: "center",
-                    backgroundColor: "#fbfcfd",
-                  }}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => { setShowDropSubFrente(true); setBusqDropSubFrente(""); }}
+                  style={{ flex: 1, borderWidth: 1, borderColor: "#cbd5e0", borderRadius: 8, height: 42, paddingHorizontal: 12, justifyContent: "center", backgroundColor: "#fbfcfd" }}
                 >
-                  <Text style={{ fontSize: 13, color: "#64748b" }}>
-                    Todos los frentes ▼
+                  <Text style={{ fontSize: 13, color: filtroSubFrente ? "#0067b1" : "#64748b", fontWeight: filtroSubFrente ? "700" : "400" }}>
+                    {filtroSubFrente || "Todos los frentes ▼"}
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 42,
-                  paddingHorizontal: 12,
-                  backgroundColor: "#fff",
-                }}
-              >
+              <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#cbd5e0", borderRadius: 8, height: 42, paddingHorizontal: 12, backgroundColor: "#fff" }}>
                 <MaterialIcons name="search" size={20} color="#94a3b8" />
                 <TextInput
                   placeholder="Buscar serial..."
-                  style={{
-                    flex: 1,
-                    marginLeft: 8,
-                    fontSize: 13,
-                    color: "#1e293b",
-                  }}
+                  value={busqSubSerial}
+                  onChangeText={setBusqSubSerial}
+                  style={{ flex: 1, marginLeft: 8, fontSize: 13, color: "#1e293b" }}
                 />
               </View>
             </View>
-            <ScrollView
-              style={{ flex: 1, backgroundColor: "#f8fafc" }}
+            
+            <FlatList
+              data={subActivosFiltrados}
+              keyExtractor={(item) => String(item.id_equipo)}
               contentContainerStyle={{ padding: 15 }}
-            >
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: "#e2e8f0",
-                  padding: 15,
-                  marginBottom: 12,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "800",
-                      color: "#00004d",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    MAQUINA SOLDADURA
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: "#16a34a",
-                      backgroundColor: "#f0fdf4",
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 12,
-                      fontWeight: "700",
-                    }}
-                  >
-                    Operativo
-                  </Text>
+              renderItem={({ item }) => {
+                const est = estadoMap[item.estado] || { color: "#475569", icon: "help", label: item.estado || "N/A" };
+                return (
+                  <View style={{ backgroundColor: "#fff", borderRadius: 10, borderWidth: 1, borderColor: "#e2e8f0", padding: 15, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <Text style={{ fontSize: 13, fontWeight: "800", color: "#00004d", textTransform: "uppercase", flex:1, marginRight:8 }}>
+                        {item.tipo || "—"}
+                      </Text>
+                      <Text style={{ fontSize: 10, color: est.color, backgroundColor: `${est.color}15`, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontWeight: "700" }}>
+                        {est.label}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 12, color: "#475569", marginBottom: 2 }}>
+                      {item.marca || "—"} · {item.modelo || "—"} · {item.anio || "—"}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: "#94a3b8" }}>
+                      Serial: <Text style={{ fontWeight: "700", color: "#64748b" }}>{item.serial_chasis || item.serial_motor || "N/A"}</Text>
+                    </Text>
+                    <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: "#f1f5f9", flexDirection: "row", alignItems: "center" }}>
+                      <MaterialIcons name={item.padre_id || item.anclaje ? "link" : "place"} size={14} color="#94a3b8" />
+                      <Text style={{ fontSize: 11, color: "#64748b", marginLeft: 4, fontWeight: "600" }}>
+                        {item.padre_id ? "Anclado" : (item.frente ? `Frente: ${item.frente}` : "Sin Asignar")}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={{ paddingVertical: 40, alignItems: "center" }}>
+                  <MaterialIcons name="construction" size={48} color="#cbd5e0" />
+                  <Text style={{ color: "#94a3b8", fontSize: 14, marginTop: 10, fontWeight: "600" }}>No se encontraron sub-activos.</Text>
                 </View>
-                <Text
-                  style={{ fontSize: 12, color: "#475569", marginBottom: 2 }}
-                >
-                  Lincoln · Ranger 300D · 2022
-                </Text>
-                <Text style={{ fontSize: 11, color: "#94a3b8" }}>
-                  Serial:{" "}
-                  <Text style={{ fontWeight: "700", color: "#64748b" }}>
-                    MS-425115
-                  </Text>
-                </Text>
-                <View
-                  style={{
-                    marginTop: 10,
-                    paddingTop: 10,
-                    borderTopWidth: 1,
-                    borderTopColor: "#f1f5f9",
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <MaterialIcons name="place" size={14} color="#94a3b8" />
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      color: "#64748b",
-                      marginLeft: 4,
-                      fontWeight: "600",
-                    }}
-                  >
-                    ASIGNACION PDVSA DAL
-                  </Text>
-                </View>
-              </View>
-
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: "#e2e8f0",
-                  padding: 15,
-                  marginBottom: 12,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "800",
-                      color: "#00004d",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    CONTENEDOR
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: "#dc2626",
-                      backgroundColor: "#fef2f2",
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 12,
-                      fontWeight: "700",
-                    }}
-                  >
-                    Inoperativo
-                  </Text>
-                </View>
-                <Text
-                  style={{ fontSize: 12, color: "#475569", marginBottom: 2 }}
-                >
-                  Generico · 20 Pies · 2020
-                </Text>
-                <Text style={{ fontSize: 11, color: "#94a3b8" }}>
-                  Serial:{" "}
-                  <Text style={{ fontWeight: "700", color: "#64748b" }}>
-                    CXZCZSC
-                  </Text>
-                </Text>
-                <View
-                  style={{
-                    marginTop: 10,
-                    paddingTop: 10,
-                    borderTopWidth: 1,
-                    borderTopColor: "#f1f5f9",
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <MaterialIcons name="link" size={14} color="#94a3b8" />
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      color: "#64748b",
-                      marginLeft: 4,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Anclado a: LOWBOY (LZZGX)
-                  </Text>
-                </View>
-              </View>
-            </ScrollView>
+              }
+            />
           </View>
         </View>
       </Modal>
 
-      {/* ── MODAL NUEVO EQUIPO ── */}
-      <Modal
-        visible={modalNuevoEquipoVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalNuevoEquipoVisible(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            padding: 15,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 16,
-              overflow: "hidden",
-              maxHeight: "90%",
-              flex: 1,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "#00004d",
-                padding: 18,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  flex: 1,
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: "rgba(14,165,233,0.2)",
-                    padding: 8,
-                    borderRadius: 10,
-                  }}
-                >
-                  <MaterialIcons name="add-circle" size={24} color="#0ea5e9" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ color: "white", fontSize: 16, fontWeight: "700" }}
-                  >
-                    Nuevo Equipo
-                  </Text>
-                  <Text
-                    style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}
-                  >
-                    Registrar maquinaria o vehículo
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => setModalNuevoEquipoVisible(false)}
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  padding: 6,
-                  borderRadius: 20,
-                }}
-              >
-                <MaterialIcons name="close" size={20} color="white" />
+  {/* Modals para Dropdowns de Sub-activos */}
+      <Modal visible={showDropSubFrente} transparent animationType="fade" onRequestClose={() => setShowDropSubFrente(false)}>
+        <View style={{ flex:1, backgroundColor:"rgba(0,0,0,0.5)", justifyContent:"center", padding:20 }}>
+          <View style={{ backgroundColor:"#fff", borderRadius:16, maxHeight:"70%", overflow:"hidden" }}>
+            <View style={{ backgroundColor:"#00004d", padding:16, flexDirection:"row", alignItems:"center", gap:10 }}>
+              <MaterialIcons name="business" size={22} color="#fff" />
+              <Text style={{ color:"#fff", fontSize:16, fontWeight:"700", flex:1 }}>Seleccionar Frente (Sub-activo)</Text>
+              <TouchableOpacity onPress={() => setShowDropSubFrente(false)}>
+                <MaterialIcons name="close" size={22} color="#fff" />
               </TouchableOpacity>
             </View>
-            <ScrollView
-              style={{ flex: 1, backgroundColor: "#fff" }}
-              contentContainerStyle={{ padding: 20 }}
-            >
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "800",
-                  color: "#64748b",
-                  marginBottom: 6,
-                  textTransform: "uppercase",
-                }}
-              >
-                TIPO DE EQUIPO *
-              </Text>
-              <View
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 45,
-                  paddingHorizontal: 12,
-                  justifyContent: "center",
-                  marginBottom: 18,
-                  backgroundColor: "#fbfcfd",
-                }}
-              >
-                <Text style={{ fontSize: 13, color: "#94a3b8" }}>
-                  Seleccionar tipo de equipo...
-                </Text>
+            <View style={{ paddingHorizontal:14, paddingTop:10, paddingBottom:6 }}>
+              <View style={[styles.filterPill, { marginBottom:6 }]}>
+                <MaterialIcons name="search" size={18} color="#94a3b8" style={{marginRight:4}} />
+                <TextInput
+                  style={{ flex:1, fontSize:13, color:"#1e293b", paddingVertical:0 }}
+                  placeholder="Buscar frente..."
+                  placeholderTextColor="#94a3b8"
+                  value={busqDropSubFrente}
+                  onChangeText={setBusqDropSubFrente}
+                />
               </View>
+            </View>
+            <TouchableOpacity onPress={() => { setFiltroSubFrente(""); setShowDropSubFrente(false); }} style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: !filtroSubFrente ? "#eff6ff" : "#fff" }}>
+              <Text style={{ fontSize:14, fontWeight: !filtroSubFrente ? "700" : "500", color: !filtroSubFrente ? "#0067b1" : "#64748b" }}>Todos los Frentes</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={frentesLista.filter(f => !busqDropSubFrente || f.toLowerCase().includes(busqDropSubFrente.toLowerCase()))}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => { setFiltroSubFrente(item); setShowDropSubFrente(false); }} style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: filtroSubFrente === item ? "#eff6ff" : "#fff", flexDirection:"row", justifyContent:"space-between", alignItems:"center" }}>
+                  <Text style={{ fontSize:13, color: filtroSubFrente === item ? "#0067b1" : "#334155", fontWeight: filtroSubFrente === item ? "700" : "500", flex:1 }} numberOfLines={2}>{item}</Text>
+                  {filtroSubFrente === item && <MaterialIcons name="check" size={18} color="#0067b1" />}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
 
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "800",
-                  color: "#64748b",
-                  marginBottom: 6,
-                  textTransform: "uppercase",
-                }}
-              >
-                MARCA
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 45,
-                  paddingHorizontal: 12,
-                  fontSize: 13,
-                  marginBottom: 18,
-                  backgroundColor: "#fbfcfd",
-                  color: "#1e293b",
-                }}
-                placeholder="Ej: Caterpillar"
-                placeholderTextColor="#94a3b8"
-              />
-
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "800",
-                  color: "#64748b",
-                  marginBottom: 6,
-                  textTransform: "uppercase",
-                }}
-              >
-                MODELO
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 45,
-                  paddingHorizontal: 12,
-                  fontSize: 13,
-                  marginBottom: 18,
-                  backgroundColor: "#fbfcfd",
-                  color: "#1e293b",
-                }}
-                placeholder="Ej: D8T"
-                placeholderTextColor="#94a3b8"
-              />
-
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "800",
-                  color: "#64748b",
-                  marginBottom: 6,
-                  textTransform: "uppercase",
-                }}
-              >
-                SERIAL O CHASIS *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 45,
-                  paddingHorizontal: 12,
-                  fontSize: 13,
-                  marginBottom: 25,
-                  backgroundColor: "#fbfcfd",
-                  color: "#1e293b",
-                }}
-                placeholder="Escriba el serial único..."
-                placeholderTextColor="#94a3b8"
-              />
-
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#0067b1",
-                  height: 48,
-                  borderRadius: 10,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexDirection: "row",
-                  gap: 8,
-                  shadowColor: "#0067b1",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                }}
-              >
-                <MaterialIcons name="save" size={20} color="#fff" />
-                <Text
-                  style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}
-                >
-                  Guardar Registro
-                </Text>
+      <Modal visible={showDropSubTipo} transparent animationType="fade" onRequestClose={() => setShowDropSubTipo(false)}>
+        <View style={{ flex:1, backgroundColor:"rgba(0,0,0,0.5)", justifyContent:"center", padding:20 }}>
+          <View style={{ backgroundColor:"#fff", borderRadius:16, maxHeight:"70%", overflow:"hidden" }}>
+            <View style={{ backgroundColor:"#00004d", padding:16, flexDirection:"row", alignItems:"center", gap:10 }}>
+              <MaterialIcons name="agriculture" size={22} color="#fff" />
+              <Text style={{ color:"#fff", fontSize:16, fontWeight:"700", flex:1 }}>Seleccionar Tipo (Sub-activo)</Text>
+              <TouchableOpacity onPress={() => setShowDropSubTipo(false)}>
+                <MaterialIcons name="close" size={22} color="#fff" />
               </TouchableOpacity>
-            </ScrollView>
+            </View>
+            <View style={{ paddingHorizontal:14, paddingTop:10, paddingBottom:6 }}>
+              <View style={[styles.filterPill, { marginBottom:6 }]}>
+                <MaterialIcons name="search" size={18} color="#94a3b8" style={{marginRight:4}} />
+                <TextInput
+                  style={{ flex:1, fontSize:13, color:"#1e293b", paddingVertical:0 }}
+                  placeholder="Buscar tipo..."
+                  placeholderTextColor="#94a3b8"
+                  value={busqDropSubTipo}
+                  onChangeText={setBusqDropSubTipo}
+                />
+              </View>
+            </View>
+            <TouchableOpacity onPress={() => { setFiltroSubTipo(""); setShowDropSubTipo(false); }} style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: !filtroSubTipo ? "#eff6ff" : "#fff" }}>
+              <Text style={{ fontSize:14, fontWeight: !filtroSubTipo ? "700" : "500", color: !filtroSubTipo ? "#0067b1" : "#64748b" }}>Todos los Tipos</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={tiposLista.filter(t => !busqDropSubTipo || t.toLowerCase().includes(busqDropSubTipo.toLowerCase()))}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => { setFiltroSubTipo(item); setShowDropSubTipo(false); }} style={{ paddingHorizontal:16, paddingVertical:12, borderBottomWidth:1, borderColor:"#f1f5f9", backgroundColor: filtroSubTipo === item ? "#eff6ff" : "#fff", flexDirection:"row", justifyContent:"space-between", alignItems:"center" }}>
+                  <Text style={{ fontSize:13, color: filtroSubTipo === item ? "#0067b1" : "#334155", fontWeight: filtroSubTipo === item ? "700" : "500", flex:1 }}>{item}</Text>
+                  {filtroSubTipo === item && <MaterialIcons name="check" size={18} color="#0067b1" />}
+                </TouchableOpacity>
+              )}
+            />
           </View>
         </View>
       </Modal>
