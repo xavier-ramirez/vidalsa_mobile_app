@@ -1213,6 +1213,8 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [tiposLista, setTiposLista] = useState([]);
   const [busqDropFrente, setBusqDropFrente] = useState("");
   const [busqDropTipo, setBusqDropTipo] = useState("");
+  const [showDropAsignar, setShowDropAsignar] = useState(false);
+  const [busqDropAsignar, setBusqDropAsignar] = useState("");
 
   const clearAdvancedFilters = () => {
     setAdvModelo("");
@@ -2399,9 +2401,107 @@ function PantallaEquipos({ user, onOpenMenu }) {
               </Text>
             </View>
           }
-          contentContainerStyle={{ padding: 12, paddingBottom: 30 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: equiposSelect.length > 0 ? 90 : 30 }}
         />
       )}
+
+      {/* ── BARRA FLOTANTE DE SELECCIÓN ── */}
+      {equiposSelect.length > 0 && (
+        <View style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          backgroundColor: "#00004d", paddingVertical: 12, paddingHorizontal: 16,
+          flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+          borderTopLeftRadius: 16, borderTopRightRadius: 16,
+          shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 8,
+          elevation: 20,
+        }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <TouchableOpacity
+              onPress={() => setEquiposSelect([])}
+              style={{ backgroundColor: "rgba(255,255,255,0.15)", padding: 6, borderRadius: 8 }}
+            >
+              <MaterialIcons name="close" size={18} color="#fff" />
+            </TouchableOpacity>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>
+              {equiposSelect.length} seleccionado{equiposSelect.length > 1 ? "s" : ""}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => { setShowDropAsignar(true); setBusqDropAsignar(""); }}
+            style={{
+              backgroundColor: "#3b82f6", paddingHorizontal: 16, paddingVertical: 10,
+              borderRadius: 10, flexDirection: "row", alignItems: "center", gap: 6,
+            }}
+          >
+            <MaterialIcons name="swap-horiz" size={18} color="#fff" />
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Asignar a Frente</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── MODAL ASIGNAR A FRENTE ── */}
+      <Modal visible={showDropAsignar} transparent animationType="fade" onRequestClose={() => setShowDropAsignar(false)}>
+        <View style={{ flex:1, backgroundColor:"rgba(0,0,0,0.5)", justifyContent:"center", padding:20 }}>
+          <View style={{ backgroundColor:"#fff", borderRadius:16, maxHeight:"70%", overflow:"hidden" }}>
+            <View style={{ backgroundColor:"#00004d", padding:16, flexDirection:"row", alignItems:"center", gap:10 }}>
+              <MaterialIcons name="swap-horiz" size={22} color="#3b82f6" />
+              <View style={{ flex:1 }}>
+                <Text style={{ color:"#fff", fontSize:16, fontWeight:"700" }}>Asignar a Frente</Text>
+                <Text style={{ color:"rgba(255,255,255,0.7)", fontSize:11 }}>
+                  {equiposSelect.length} equipo{equiposSelect.length > 1 ? "s" : ""} seleccionado{equiposSelect.length > 1 ? "s" : ""}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowDropAsignar(false)}>
+                <MaterialIcons name="close" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ paddingHorizontal:14, paddingTop:10, paddingBottom:6 }}>
+              <View style={[styles.filterPill, { marginBottom:6 }]}>
+                <MaterialIcons name="search" size={18} color="#94a3b8" style={{marginRight:4}} />
+                <TextInput
+                  style={{ flex:1, fontSize:13, color:"#1e293b", paddingVertical:0 }}
+                  placeholder="Buscar frente destino..."
+                  placeholderTextColor="#94a3b8"
+                  value={busqDropAsignar}
+                  onChangeText={setBusqDropAsignar}
+                  autoFocus
+                />
+              </View>
+            </View>
+            <FlatList
+              data={frentesLista.filter(f => !busqDropAsignar || f.toLowerCase().includes(busqDropAsignar.toLowerCase()))}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    showModernAlert(
+                      "Confirmar Asignación",
+                      `¿Mover ${equiposSelect.length} equipo(s) al frente "${item}"?`,
+                      [
+                        { text: "Cancelar", style: "cancel" },
+                        {
+                          text: "Asignar",
+                          onPress: () => {
+                            showModernAlert("Éxito", `${equiposSelect.length} equipo(s) asignados a "${item}"`);
+                            setEquiposSelect([]);
+                            setShowDropAsignar(false);
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                  style={{ paddingHorizontal:16, paddingVertical:14, borderBottomWidth:1, borderColor:"#f1f5f9", flexDirection:"row", alignItems:"center", gap:10 }}
+                >
+                  <MaterialIcons name="business" size={18} color="#64748b" />
+                  <Text style={{ fontSize:14, color:"#334155", fontWeight:"500", flex:1 }} numberOfLines={2}>{item}</Text>
+                  <MaterialIcons name="chevron-right" size={20} color="#cbd5e0" />
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={{ padding:20, textAlign:"center", color:"#94a3b8" }}>Sin frentes disponibles</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Modal de Detalles (igual que web) ── */}
       <Modal
@@ -2823,248 +2923,72 @@ function PantallaEquipos({ user, onOpenMenu }) {
         transparent={true}
         onRequestClose={() => setModalAnclajesVisible(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            padding: 15,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 16,
-              overflow: "hidden",
-              maxHeight: "90%",
-              flex: 1,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "#00004d",
-                padding: 18,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  flex: 1,
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: "rgba(13,148,136,0.2)",
-                    padding: 8,
-                    borderRadius: 10,
-                  }}
-                >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 15 }}>
+          <View style={{ backgroundColor: "#fff", borderRadius: 16, overflow: "hidden", maxHeight: "90%", flex: 1 }}>
+            <View style={{ backgroundColor: "#00004d", padding: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+                <View style={{ backgroundColor: "rgba(13,148,136,0.2)", padding: 8, borderRadius: 10 }}>
                   <MaterialIcons name="link" size={24} color="#14b8a6" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ color: "white", fontSize: 16, fontWeight: "700" }}
-                  >
-                    Gestión de Anclajes
-                  </Text>
-                  <Text
-                    style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}
-                  >
-                    Vincular equipos a vehículos
+                  <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>Equipos Anclados</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }} numberOfLines={1}>
+                    {filtroFrente ? `Frente: ${filtroFrente}` : "Todos los frentes"}
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={() => setModalAnclajesVisible(false)}
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  padding: 6,
-                  borderRadius: 20,
-                }}
-              >
+              <TouchableOpacity onPress={() => setModalAnclajesVisible(false)} style={{ backgroundColor: "rgba(255,255,255,0.1)", padding: 6, borderRadius: 20 }}>
                 <MaterialIcons name="close" size={20} color="white" />
               </TouchableOpacity>
             </View>
-            <View
-              style={{
-                padding: 12,
-                backgroundColor: "#fff",
-                borderBottomWidth: 1,
-                borderBottomColor: "#e2e8f0",
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 42,
-                  paddingHorizontal: 12,
-                  backgroundColor: "#fbfcfd",
-                }}
-              >
-                <MaterialIcons name="search" size={20} color="#94a3b8" />
-                <TextInput
-                  placeholder="Buscar vehículos o cabezales anclables..."
-                  style={{
-                    flex: 1,
-                    marginLeft: 8,
-                    fontSize: 13,
-                    color: "#1e293b",
-                  }}
-                />
-              </View>
+
+            {/* Conteo */}
+            <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: "#f0fdfa", borderBottomWidth: 1, borderColor: "#ccfbf1" }}>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: "#0f766e" }}>
+                {equiposFiltrados.length} equipos {filtroFrente ? `en "${filtroFrente}"` : "totales"}
+              </Text>
             </View>
-            <ScrollView
-              style={{ flex: 1, backgroundColor: "#f8fafc" }}
-              contentContainerStyle={{ padding: 15 }}
-            >
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 10,
-                  padding: 15,
-                  borderWidth: 1,
-                  borderColor: "#e2e8f0",
-                  marginBottom: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                }}
-              >
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    backgroundColor: "#f1f5f9",
-                    borderRadius: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <MaterialIcons
-                    name="local-shipping"
-                    size={22}
-                    color="#64748b"
-                  />
+
+            {/* Lista de equipos del frente */}
+            <FlatList
+              data={equiposFiltrados}
+              keyExtractor={(item) => String(item.id_equipo)}
+              contentContainerStyle={{ padding: 12 }}
+              renderItem={({ item }) => {
+                const est = estadoMap[item.estado] || { color: "#475569", icon: "help", label: item.estado || "N/A" };
+                return (
+                  <View style={{
+                    backgroundColor: "#fff", borderRadius: 10, padding: 14, borderWidth: 1, borderColor: "#e2e8f0",
+                    marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 12,
+                    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2,
+                  }}>
+                    <View style={{ width: 40, height: 40, backgroundColor: "#f1f5f9", borderRadius: 8, alignItems: "center", justifyContent: "center" }}>
+                      <MaterialIcons name="local-shipping" size={20} color="#64748b" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: "800", color: "#0f172a", textTransform: "uppercase" }}>{item.tipo || "—"}</Text>
+                      <Text style={{ fontSize: 11, color: "#475569", marginTop: 1 }}>{item.marca || "—"} · {item.modelo || "—"}</Text>
+                      {item.placa && item.placa !== "S/P" ? (
+                        <Text style={{ fontSize: 11, color: "#0067b1", marginTop: 1, fontWeight: "600" }}>P: {item.placa}</Text>
+                      ) : item.serial_chasis ? (
+                        <Text style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>S: {item.serial_chasis}</Text>
+                      ) : null}
+                    </View>
+                    <View style={{ alignItems: "center" }}>
+                      <MaterialIcons name={est.icon} size={18} color={est.color} />
+                      <Text style={{ fontSize: 9, color: est.color, fontWeight: "700", marginTop: 2 }}>{est.label}</Text>
+                    </View>
+                  </View>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={{ paddingVertical: 40, alignItems: "center" }}>
+                  <MaterialIcons name="link-off" size={48} color="#cbd5e0" />
+                  <Text style={{ color: "#94a3b8", fontSize: 14, marginTop: 10, fontWeight: "600" }}>Sin equipos en este frente</Text>
+                  <Text style={{ color: "#cbd5e0", fontSize: 12, marginTop: 4 }}>Selecciona un frente para ver sus equipos</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "800",
-                      color: "#0f172a",
-                    }}
-                  >
-                    CHUTO
-                  </Text>
-                  <Text
-                    style={{ fontSize: 11, color: "#475569", marginTop: 2 }}
-                  >
-                    MACK VISIÓN - 2008
-                  </Text>
-                  <Text
-                    style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}
-                  >
-                    A90AN2A
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#0d9488",
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 6,
-                  }}
-                >
-                  <Text
-                    style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}
-                  >
-                    Anclar
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 10,
-                  padding: 15,
-                  borderWidth: 1,
-                  borderColor: "#e2e8f0",
-                  marginBottom: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                }}
-              >
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    backgroundColor: "#f1f5f9",
-                    borderRadius: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <MaterialIcons
-                    name="local-shipping"
-                    size={22}
-                    color="#64748b"
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "800",
-                      color: "#0f172a",
-                    }}
-                  >
-                    CAMION CARGO 1721
-                  </Text>
-                  <Text
-                    style={{ fontSize: 11, color: "#475569", marginTop: 2 }}
-                  >
-                    FORD - 2012
-                  </Text>
-                  <Text
-                    style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}
-                  >
-                    A06AR9P
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#0d9488",
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 6,
-                  }}
-                >
-                  <Text
-                    style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}
-                  >
-                    Anclar
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+              }
+            />
           </View>
         </View>
       </Modal>
