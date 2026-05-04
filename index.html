@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Vidalsa Mobile</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <link rel="stylesheet" href="/css/fonts.css" />
+    <link rel="stylesheet" href="/css/estilos_globales.css" />
+    <link rel="stylesheet" href="/css/menu.css" />
+    <link rel="stylesheet" href="/css/inicio_sesion.css" />
+
+    <style>
+        body { margin: 0; background-color: #f1f5f9; padding-bottom: env(safe-area-inset-bottom); }
+
+        /* ── LOGIN ── */
+        #login-screen {
+            display: flex; min-height: 100vh; min-height: 100dvh;
+            align-items: center; justify-content: center; padding: 20px;
+            box-sizing: border-box; background: linear-gradient(135deg, #00264d 0%, #0067b1 100%);
+        }
+        .login-card {
+            background: white; width: 100%; max-width: 380px; border-radius: 20px;
+            padding: 30px 26px; box-shadow: 0 20px 50px -12px rgba(0,0,0,0.35);
+        }
+        .login-logo-wrap { text-align: center; margin-bottom: 20px; }
+        .login-logo-wrap img { max-width: 180px; height: auto; }
+        .login-title { color: #0f172a; font-weight: 800; font-size: 18px; margin: 0 0 6px; text-align: center; }
+        .login-subtitle { color: #64748b; font-size: 13px; margin: 0 0 22px; text-align: center; }
+        .form-group { margin-bottom: 14px; position: relative; }
+        .form-group label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .form-group input {
+            width: 100%; box-sizing: border-box; padding: 12px 14px; padding-right: 44px;
+            border: 1px solid #cbd5e0; border-radius: 12px; font-size: 15px; background: #f8fafc;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit;
+        }
+        .form-group input:focus { border-color: #0067b1; box-shadow: 0 0 0 3px rgba(0,103,177,0.14); background: white; }
+        .password-toggle {
+            position: absolute; right: 8px; top: 30px; background: none; border: none; cursor: pointer;
+            color: #64748b; padding: 8px; display: flex; align-items: center; justify-content: center;
+        }
+        .login-alert {
+            display: none; align-items: center; gap: 8px;
+            background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;
+            border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px;
+        }
+        .btn-login {
+            width: 100%; padding: 14px; border: none; cursor: pointer;
+            background: linear-gradient(135deg, #0067b1, #004481); color: white;
+            font-weight: 800; font-size: 15px; border-radius: 12px;
+            box-shadow: 0 6px 12px -3px rgba(0,103,177,0.4); font-family: inherit;
+        }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* ── APP ── */
+        #app-screen { display: none; padding-top: 60px; }
+        .dashboard-header {
+            height: 60px; top: 0; position: fixed; width: 100%; max-width: 100%;
+            z-index: 1000; left: 0; transform: none;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; padding-top: env(safe-area-inset-top);
+            background: linear-gradient(135deg, #004481, #0067b1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .menu-toggle { display: block !important; margin-left: auto; background: none; border: none; color: white; }
+        .desktop-only { display: none !important; }
+        .mobile-only { display: inline-flex !important; }
+        .mobile-menu { top: calc(60px + env(safe-area-inset-top)); }
+        #userBadge { font-size: 11px; color: rgba(255,255,255,0.85); margin-right: 8px; }
+
+        .view-container { display: none; padding: 15px; }
+        .view-container.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .offline-status {
+            background: #cbd5e1; color: #334155; text-align: center; font-size: 11px; padding: 5px;
+            font-weight: bold; width: 100%; top: calc(60px + env(safe-area-inset-top));
+            position: fixed; z-index: 999; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .offline-status.active     { background: #3b82f6; color: white; }
+        .offline-status.disconnect { background: #ef4444; color: white; }
+
+        /* ── EQUIPOS LIST ── */
+        .equipos-toolbar {
+            display: flex; align-items: center; gap: 8px;
+            background: white; border: 2px solid #e2e8f0; border-radius: 12px;
+            padding: 8px 12px; margin-bottom: 14px;
+        }
+        .equipos-toolbar i { color: #94a3b8; font-size: 22px; }
+        .equipos-toolbar input {
+            flex: 1; border: none; outline: none; background: transparent;
+            font-size: 15px; color: #1e293b; font-family: inherit;
+        }
+        .equipos-list { display: flex; flex-direction: column; gap: 10px; }
+        .equipo-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04); cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .equipo-card:active { transform: scale(0.98); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .equipo-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .equipo-codigo { font-weight: 800; color: #0f172a; font-size: 15px; }
+        .badge-status { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 800; letter-spacing: 0.04em; }
+        .badge-ok    { background: #dcfce7; color: #16a34a; }
+        .badge-warn  { background: #fef3c7; color: #b45309; }
+        .badge-bad   { background: #fee2e2; color: #dc2626; }
+        .equipo-modelo { font-size: 13px; color: #1e293b; font-weight: 600; }
+        .equipo-meta {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px;
+            font-size: 12px; color: #64748b;
+        }
+        .equipo-meta span { display: inline-flex; align-items: center; gap: 4px; }
+        .equipo-meta i { font-size: 14px; color: #94a3b8; }
+
+        .empty-state {
+            text-align: center; padding: 40px 20px; color: #64748b;
+            background: white; border-radius: 12px; border: 1px dashed #cbd5e1;
+        }
+        .empty-state i { font-size: 36px; color: #cbd5e1; margin-bottom: 8px; }
+        .empty-state p { margin: 0; font-size: 14px; line-height: 1.5; }
+
+        /* ── MODAL CASILLERO (idéntico a la web) ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+            z-index: 9000; align-items: flex-end; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
+        .modal-card {
+            background: white; width: 100%; max-width: 600px;
+            max-height: 92vh; border-top-left-radius: 20px; border-top-right-radius: 20px;
+            display: flex; flex-direction: column; overflow: hidden;
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-head {
+            background: #00004d; color: white; padding: 18px 22px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .modal-head .modal-title { font-size: 20px; font-weight: 900; letter-spacing: 0.05em; margin: 0; }
+        .modal-head .modal-sub   { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+        .modal-close-btn {
+            background: rgba(255,255,255,0.15); border: none; color: white;
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-body { overflow-y: auto; padding: 12px 16px 24px; }
+        .loading { text-align: center; padding: 40px 20px; color: #64748b; font-size: 14px; }
+        .loading.error { color: #b91c1c; }
+
+        .accordion-section {
+            border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 10px; overflow: hidden;
+        }
+        .accordion-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 16px; cursor: pointer;
+            background: #f8fafc; font-weight: 800; color: #0f172a; font-size: 14px;
+        }
+        .accordion-header span { display: inline-flex; align-items: center; gap: 8px; }
+        .accordion-header i.material-icons:first-child { color: #0067b1; }
+        .accordion-chev { transition: transform 0.2s; color: #64748b; }
+        .accordion-section.open .accordion-chev { transform: rotate(180deg); }
+        .accordion-body { display: none; padding: 8px 16px 12px; }
+        .accordion-section.open .accordion-body { display: block; }
+
+        .detalle-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid #f1f5f9; gap: 12px;
+        }
+        .detalle-row:last-child { border-bottom: none; }
+        .detalle-label { color: #64748b; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+        .detalle-valor {
+            color: #0f172a; font-size: 13px; font-weight: 700; text-align: right;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .pdf-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 8px; background: #fee2e2;
+            color: #dc2626; text-decoration: none;
+        }
+        .pdf-btn i { font-size: 20px; }
+
+        /* ── SYNC ── */
+        .sync-card {
+            background: white; padding: 22px 18px; border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0;
+        }
+        .sync-stats {
+            display: flex; gap: 12px; margin: 14px 0 18px;
+        }
+        .sync-stat {
+            flex: 1; background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 12px; padding: 12px; text-align: center;
+        }
+        .sync-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 4px; }
+        .sync-stat-value { font-size: 16px; font-weight: 800; color: #0f172a; }
+        .btn-sync {
+            width: 100%; padding: 14px; border: none; cursor: pointer;
+            background: linear-gradient(135deg, #0284c7, #0369a1); color: white;
+            font-weight: 700; font-size: 15px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-family: inherit;
+        }
+        .btn-sync:disabled { opacity: 0.6; cursor: not-allowed; }
+        #syncStatusMsg { font-size: 12px; color: #64748b; text-align: center; margin-top: 10px; min-height: 16px; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-logo-wrap"><img src="/images/maquinaria/logo.webp" alt="Vidalsa" /></div>
+            <h1 class="login-title">Sistema de Gestión</h1>
+            <p class="login-subtitle">Equipos Operacionales — Móvil</p>
+            <div id="loginAlert" class="login-alert"></div>
+            <form id="loginForm" autocomplete="off" novalidate>
+                <div class="form-group">
+                    <label for="login_correo">Correo corporativo</label>
+                    <input type="email" id="login_correo" name="correo" autocomplete="off" required />
+                </div>
+                <div class="form-group">
+                    <label for="login_password">Contraseña</label>
+                    <input type="password" id="login_password" name="password" autocomplete="off" required />
+                    <button type="button" class="password-toggle" id="passwordToggle" aria-label="Mostrar/ocultar contraseña">
+                        <i class="material-icons">visibility</i>
+                    </button>
+                </div>
+                <button type="submit" class="btn-login">Iniciar sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app-screen">
+        <header class="dashboard-header">
+            <div class="header-logo" style="display:flex; align-items:center; gap: 10px;">
+                <img src="/images/maquinaria/logo.webp" alt="Vidalsa" style="height: 36px; width: auto; display: block;" />
+            </div>
+            <div style="display:flex; align-items:center;">
+                <span id="userBadge"></span>
+                <button class="menu-toggle mobile-only" id="mobileMenuBtn">
+                    <i class="material-icons" style="font-size: 28px;">menu</i>
+                </button>
+            </div>
+        </header>
+
+        <div class="offline-status disconnect" id="offlineIndicator">
+            <i class="material-icons" style="font-size: 14px;">signal_wifi_off</i> Sin conexión
+        </div>
+
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="#" class="mobile-nav-link active" data-target="view-equipos">
+                <i class="material-icons">agriculture</i> Equipos
+            </a>
+            <a href="#" class="mobile-nav-link" data-target="view-historial">
+                <i class="material-icons">history</i> Historial movilizaciones
+            </a>
+            <a href="#" class="mobile-nav-link" data-target="view-sync">
+                <i class="material-icons">sync</i> Sincronización
+            </a>
+            <a href="#" class="mobile-nav-link" id="logoutBtn">
+                <i class="material-icons">logout</i> Cerrar sesión
+            </a>
+        </div>
+
+        <main class="main-viewport" style="margin-top: 35px;">
+
+            <!-- VISTA EQUIPOS -->
+            <div id="view-equipos" class="view-container active">
+                <div class="equipos-toolbar">
+                    <i class="material-icons">search</i>
+                    <input type="text" id="equiposSearch" placeholder="Buscar por código, placa, marca, modelo..." autocomplete="off" />
+                </div>
+                <div id="equiposListContainer" class="equipos-list"></div>
+            </div>
+
+            <!-- VISTA HISTORIAL (placeholder hasta próxima fase) -->
+            <div id="view-historial" class="view-container">
+                <div class="empty-state">
+                    <i class="material-icons">history</i>
+                    <p>Historial de movilizaciones — próxima fase.</p>
+                </div>
+            </div>
+
+            <!-- VISTA SYNC -->
+            <div id="view-sync" class="view-container">
+                <div class="sync-card">
+                    <h2 style="margin:0 0 6px; font-size: 16px; color:#0f172a; font-weight: 800;">Centro de Sincronización</h2>
+                    <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin: 0 0 6px;">
+                        Descarga los equipos de tu frente y cachea la información para trabajar sin internet.
+                    </p>
+                    <div class="sync-stats">
+                        <div class="sync-stat">
+                            <div class="sync-stat-label">Equipos</div>
+                            <div class="sync-stat-value" id="equiposCountLabel">0</div>
+                        </div>
+                        <div class="sync-stat">
+                            <div class="sync-stat-label">Última sync</div>
+                            <div class="sync-stat-value" id="lastSyncLabel">Nunca</div>
+                        </div>
+                    </div>
+                    <button id="btnSyncNow" class="btn-sync">
+                        <i class="material-icons">cloud_download</i> Sincronizar ahora
+                    </button>
+                    <div id="syncStatusMsg"></div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL CASILLERO -->
+    <div id="equipoModal" class="modal-overlay" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="modal-head">
+                <div>
+                    <h3 class="modal-title">CASILLERO</h3>
+                    <div class="modal-sub" id="equipoModalSub"></div>
+                </div>
+                <button class="modal-close-btn" id="equipoModalClose" aria-label="Cerrar">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="modal-body" id="equipoModalBody"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

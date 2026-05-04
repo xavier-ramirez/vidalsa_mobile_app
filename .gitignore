@@ -1,0 +1,27 @@
+# Node
+node_modules/
+package-lock.json.bak
+*.log
+
+# Vite build output (regenerable con `npm run build`)
+dist/
+
+# Android Studio / Gradle
+android/build/
+android/.gradle/
+android/app/build/
+android/captures/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/release/
+android/app/*.keystore
+android/app/google-services.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
