@@ -176,9 +176,126 @@
         .pdf-btn {
             display: inline-flex; align-items: center; justify-content: center;
             width: 32px; height: 32px; border-radius: 8px; background: #fee2e2;
-            color: #dc2626; text-decoration: none;
+            color: #dc2626; text-decoration: none; border: none; cursor: pointer;
         }
         .pdf-btn i { font-size: 20px; }
+        .modal-actions { padding: 14px 16px 4px; display: flex; gap: 8px; }
+        .modal-action-btn {
+            flex: 1; display: inline-flex; align-items: center; justify-content: center;
+            gap: 6px; padding: 12px; border-radius: 10px; cursor: pointer; border: none;
+            background: linear-gradient(135deg, #0067b1, #004481); color: white;
+            font-weight: 700; font-size: 13px; font-family: inherit;
+        }
+        .modal-action-btn i { font-size: 18px; }
+
+        /* ── HISTORIAL ── */
+        .hist-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 12px 14px; margin-bottom: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .hist-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .hist-codigo { font-weight: 800; color: #00264d; font-size: 14px; letter-spacing: 0.05em; }
+        .hist-tipo { font-size: 10px; padding: 3px 8px; border-radius: 12px; background: #e0f2fe; color: #0369a1; font-weight: 700; }
+        .hist-route {
+            display: flex; align-items: center; gap: 8px; font-size: 13px;
+            color: #1e293b; margin-bottom: 6px; flex-wrap: wrap;
+        }
+        .hist-route span { display: inline-flex; align-items: center; gap: 4px; }
+        .hist-route i { font-size: 14px; color: #94a3b8; }
+        .hist-meta, .hist-user {
+            display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: #64748b;
+        }
+        .hist-meta span, .hist-user { display: inline-flex; align-items: center; gap: 4px; }
+        .hist-meta i, .hist-user i { font-size: 13px; color: #94a3b8; }
+
+        /* ── EQUIPOS FORM (registrar/editar) ── */
+        #eqFormOverlay {
+            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+            z-index: 9100; align-items: flex-end; justify-content: center;
+        }
+        #eqFormOverlay.open { display: flex; animation: fadeIn 0.2s; }
+        .eqf-card {
+            background: white; width: 100%; max-width: 600px; max-height: 92vh;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            display: flex; flex-direction: column; overflow: hidden;
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .eqf-head {
+            background: linear-gradient(135deg, #00264d, #0067b1); color: white;
+            padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .eqf-head h3 { margin: 0; font-size: 16px; font-weight: 800; }
+        .eqf-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+        .eqf-group { margin-bottom: 12px; }
+        .eqf-group label { display: block; font-size: 11px; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+        .eqf-group input, .eqf-group select {
+            width: 100%; box-sizing: border-box; padding: 10px 12px;
+            border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px;
+            background: #f8fafc; outline: none; font-family: inherit;
+        }
+        .eqf-group input:focus, .eqf-group select:focus {
+            border-color: #0067b1; box-shadow: 0 0 0 3px rgba(0,103,177,0.14); background: white;
+        }
+        .eqf-foot {
+            padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px;
+            background: #fafbfc;
+        }
+        .eqf-btn {
+            flex: 1; padding: 12px; border: none; cursor: pointer; border-radius: 10px;
+            font-weight: 700; font-size: 14px; font-family: inherit;
+        }
+        .eqf-btn-cancel { background: white; border: 1px solid #e2e8f0; color: #64748b; }
+        .eqf-btn-submit { background: linear-gradient(135deg, #0284c7, #0369a1); color: white; }
+        .eqf-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .eqf-error {
+            display: none; align-items: flex-start; gap: 8px;
+            background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;
+            border-radius: 10px; padding: 10px 12px; font-size: 13px;
+            margin-bottom: 12px; white-space: pre-line;
+        }
+
+        /* ── PDF VIEWER ── */
+        #pdfViewerOverlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+            z-index: 9200; flex-direction: column;
+        }
+        #pdfViewerOverlay.open { display: flex; animation: fadeIn 0.2s; }
+        .pdf-head {
+            background: #00004d; color: white; padding: 14px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .pdf-head h3 {
+            margin: 0; font-size: 14px; font-weight: 700;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+        }
+        .pdf-canvas-wrap {
+            flex: 1; overflow: auto; padding: 10px; display: flex;
+            justify-content: center; align-items: flex-start;
+        }
+        #pdfCanvas { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .pdf-controls {
+            background: #1e293b; padding: 10px; display: flex; gap: 8px;
+            justify-content: center; align-items: center; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+        .pdf-controls button {
+            background: rgba(255,255,255,0.15); border: none; color: white;
+            width: 40px; height: 40px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pdf-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pdf-controls #pdfPageCounter { color: white; font-size: 12px; font-weight: 700; padding: 0 8px; min-width: 60px; text-align: center; }
+        #pdfViewerStatus { color: white; padding: 10px; text-align: center; font-size: 13px; }
+
+        /* ── FAB Registrar ── */
+        .fab-register {
+            position: fixed; bottom: 24px; right: 20px; z-index: 800;
+            width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+            background: linear-gradient(135deg, #16a34a, #15803d); color: white;
+            box-shadow: 0 6px 14px rgba(22, 163, 74, 0.5);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .fab-register i { font-size: 28px; }
 
         /* ── SYNC ── */
         .sync-card {
@@ -273,14 +390,20 @@
                     <input type="text" id="equiposSearch" placeholder="Buscar por código, placa, marca, modelo..." autocomplete="off" />
                 </div>
                 <div id="equiposListContainer" class="equipos-list"></div>
+                <button type="button" class="fab-register" id="btnRegistrarEquipo" title="Registrar nuevo equipo">
+                    <i class="material-icons">add</i>
+                </button>
             </div>
 
-            <!-- VISTA HISTORIAL (placeholder hasta próxima fase) -->
+            <!-- VISTA HISTORIAL -->
             <div id="view-historial" class="view-container">
-                <div class="empty-state">
-                    <i class="material-icons">history</i>
-                    <p>Historial de movilizaciones — próxima fase.</p>
+                <div class="equipos-toolbar">
+                    <i class="material-icons">agriculture</i>
+                    <select id="historialEquipoSelect" style="flex:1; border:none; outline:none; background:transparent; font-size:14px; color:#1e293b; font-family:inherit;">
+                        <option value="">— Selecciona un equipo —</option>
+                    </select>
                 </div>
+                <div id="historialList"></div>
             </div>
 
             <!-- VISTA SYNC -->
@@ -323,6 +446,47 @@
                 </button>
             </div>
             <div class="modal-body" id="equipoModalBody"></div>
+        </div>
+    </div>
+
+    <!-- MODAL FORMULARIO EQUIPO (registrar/editar) -->
+    <div id="eqFormOverlay" role="dialog" aria-modal="true">
+        <div class="eqf-card">
+            <div class="eqf-head">
+                <h3 id="eqFormTitle">Registrar Equipo</h3>
+                <button class="modal-close-btn" id="eqFormClose" aria-label="Cerrar">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="eqf-body">
+                <div id="eqFormError" class="eqf-error"></div>
+                <div id="eqFormBody"></div>
+            </div>
+            <div class="eqf-foot">
+                <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('eqFormOverlay').classList.remove('open');">Cancelar</button>
+                <button type="button" class="eqf-btn eqf-btn-submit" id="eqFormSubmit">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISOR PDF EMBEBIDO -->
+    <div id="pdfViewerOverlay" role="dialog" aria-modal="true">
+        <div class="pdf-head">
+            <h3 id="pdfViewerTitle">Documento</h3>
+            <button class="modal-close-btn" id="pdfCloseBtn" aria-label="Cerrar">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <div id="pdfViewerStatus"></div>
+        <div class="pdf-canvas-wrap">
+            <canvas id="pdfCanvas"></canvas>
+        </div>
+        <div class="pdf-controls">
+            <button id="pdfPrevBtn" title="Anterior"><i class="material-icons">chevron_left</i></button>
+            <button id="pdfZoomOut" title="Alejar"><i class="material-icons">zoom_out</i></button>
+            <span id="pdfPageCounter">— / —</span>
+            <button id="pdfZoomIn" title="Acercar"><i class="material-icons">zoom_in</i></button>
+            <button id="pdfNextBtn" title="Siguiente"><i class="material-icons">chevron_right</i></button>
         </div>
     </div>
 

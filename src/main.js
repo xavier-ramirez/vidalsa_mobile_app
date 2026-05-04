@@ -1,19 +1,18 @@
 /*
- * Vidalsa Mobile — APK Capacitor
- * Orquestador: login → app principal con módulos.
+ * Vidalsa Mobile — APK Capacitor (orquestador).
  */
 
 import { auth } from './auth.js';
 import { sync } from './sync.js';
 import { equipos } from './equipos.js';
+import { equiposForm } from './equipos-form.js';
+import { pdfViewer } from './pdf-viewer.js';
+import { historial } from './historial.js';
 
 const app = {
     init() {
-        if (auth.isLoggedIn()) {
-            this.showApp();
-        } else {
-            this.showLogin();
-        }
+        if (auth.isLoggedIn()) this.showApp();
+        else this.showLogin();
         this.bindNetworkStatus();
         this.updateOnlineStatus();
     },
@@ -31,9 +30,16 @@ const app = {
         this.renderUserHeader();
         equipos.bindSearch();
         equipos.bindModalClose();
+        equiposForm.bindControls();
+        pdfViewer.bindControls();
         this.bindSyncButtons();
+        this.bindCreateButton();
 
-        // Sync inicial si nunca se hizo (1ra vez tras login)
+        // Hook para que el form de equipos pueda refrescar la lista
+        window._equiposModuleRefresh = () => {
+            equipos.renderList(document.getElementById('equiposSearch')?.value || '');
+        };
+
         if (sync.isSyncRequired() && navigator.onLine) {
             await this.runSync({ silent: true });
         }
@@ -52,7 +58,6 @@ const app = {
             const password = document.getElementById('login_password').value;
             const alertBox = document.getElementById('loginAlert');
             const submitBtn = form.querySelector('button[type=submit]');
-
             alertBox.style.display = 'none';
             alertBox.textContent = '';
 
@@ -61,10 +66,8 @@ const app = {
                 alertBox.style.display = 'flex';
                 return;
             }
-
             submitBtn.disabled = true;
             submitBtn.textContent = 'Validando...';
-
             try {
                 await auth.login(correo, password);
                 await this.showApp();
@@ -106,8 +109,9 @@ const app = {
                 const target = document.getElementById(targetId);
                 if (target) target.classList.add('active');
                 menu.classList.remove('active');
-                if (targetId === 'view-equipos') equipos.renderList(document.getElementById('equiposSearch')?.value || '');
-                if (targetId === 'view-sync') this.renderSyncStatus();
+                if (targetId === 'view-equipos')   equipos.renderList(document.getElementById('equiposSearch')?.value || '');
+                if (targetId === 'view-sync')      this.renderSyncStatus();
+                if (targetId === 'view-historial') historial.renderEquipoSelector();
             });
         });
 
@@ -131,6 +135,14 @@ const app = {
                 await this.runSync({ silent: false });
                 equipos.renderList(document.getElementById('equiposSearch')?.value || '');
             });
+        }
+    },
+
+    bindCreateButton() {
+        const btn = document.getElementById('btnRegistrarEquipo');
+        if (btn && !btn.dataset.bound) {
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', () => equiposForm.openCreate());
         }
     },
 

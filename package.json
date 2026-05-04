@@ -16,6 +16,7 @@
     "@capacitor-community/sqlite": "^6.0.0",
     "@capacitor/android": "^6.2.1",
     "@capacitor/core": "^6.0.0",
-    "jeep-sqlite": "^2.7.0"
+    "jeep-sqlite": "^2.7.0",
+    "pdfjs-dist": "^5.7.284"
   }
 }
