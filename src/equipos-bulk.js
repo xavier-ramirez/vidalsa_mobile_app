@@ -43,9 +43,38 @@ export const equiposBulk = {
     },
 
     clearAll() {
+        // 1. Vaciar el set de selección
         _selected.clear();
+
+        // 2. Quitar highlight de TODAS las cards (defensivo: aunque no tengan is-selected,
+        //    si alguna quedó por re-render desincronizado se limpia igual).
+        document.querySelectorAll('.equipo-card').forEach(c => c.classList.remove('is-selected'));
+
+        // 3. Refrescar barra (ocultarla si selected.size === 0).
         refreshBar();
-        document.querySelectorAll('.equipo-card.is-selected').forEach(c => c.classList.remove('is-selected'));
+
+        // 4. Cerrar cualquier modal bulk que pudiera estar abierto. Sin esto,
+        //    si el usuario tenía abierto el modal "Movilizar" y desde la barra
+        //    presionaba "Limpiar", el modal se quedaba con la lista vieja y al
+        //    confirmar se enviaban ids vacíos (o peor, el usuario creía que iba
+        //    a movilizar los del modal).
+        ['bulkMovOverlay','bulkUbicOverlay','bulkAnchorOverlay'].forEach(id => {
+            const o = document.getElementById(id);
+            if (o) o.classList.remove('open');
+        });
+    },
+
+    /** Guard común: rechaza submit si la selección quedó vacía (p.ej. tras Limpiar). */
+    _ensureSelection(errorBoxId) {
+        if (_selected.size > 0) return true;
+        const err = errorBoxId ? document.getElementById(errorBoxId) : null;
+        if (err) {
+            err.textContent = 'No hay equipos seleccionados. Selecciona al menos uno.';
+            err.style.display = 'flex';
+        } else {
+            window.showToast?.('No hay equipos seleccionados.', 'warning');
+        }
+        return false;
     },
 
     /* ── BULK MOVILIZAR ── */
@@ -109,6 +138,7 @@ export const equiposBulk = {
         const err = document.getElementById('bulkMovError');
         const btn = document.getElementById('bulkMovSubmit');
         err.style.display = 'none';
+        if (!this._ensureSelection('bulkMovError')) return;
         if (!dest) { err.textContent = 'Selecciona el frente destino.'; err.style.display = 'flex'; return; }
         if (!navigator.onLine) { err.textContent = 'Necesitas conexión.'; err.style.display = 'flex'; return; }
         btn.disabled = true; btn.textContent = 'Movilizando…';
@@ -141,6 +171,7 @@ export const equiposBulk = {
         const err = document.getElementById('bulkUbicError');
         const btn = document.getElementById('bulkUbicSubmit');
         err.style.display = 'none';
+        if (!this._ensureSelection('bulkUbicError')) return;
         if (!navigator.onLine) { err.textContent = 'Necesitas conexión.'; err.style.display = 'flex'; return; }
         btn.disabled = true; btn.textContent = 'Guardando…';
         try {
@@ -160,7 +191,7 @@ export const equiposBulk = {
 
     /* ── BULK DELETE ── */
     async confirmBulkDelete() {
-        if (_selected.size === 0) return;
+        if (!this._ensureSelection(null)) return;
         if (!navigator.onLine) {
             window.showToast?.('Necesitas conexión.', 'error');
             return;
@@ -195,7 +226,7 @@ export const equiposBulk = {
 
     /* ── BULK DESANCLAR ── (botón rojo, confirma y ejecuta directamente) */
     async desanclar() {
-        if (_selected.size === 0) return;
+        if (!this._ensureSelection(null)) return;
         if (!navigator.onLine) { window.showToast?.('Necesitas conexión.', 'error'); return; }
         if (!confirm(`¿Desanclar ${_selected.size} equipo(s) seleccionado(s)?`)) return;
         try {
@@ -214,6 +245,7 @@ export const equiposBulk = {
         const err = document.getElementById('bulkAnchorError');
         const btn = document.getElementById('bulkAnchorSubmit');
         err.style.display = 'none';
+        if (!this._ensureSelection('bulkAnchorError')) return;
         if (!hostId) { err.textContent = 'Selecciona un equipo host.'; err.style.display = 'flex'; return; }
         if (!navigator.onLine) { err.textContent = 'Necesitas conexión.'; err.style.display = 'flex'; return; }
         btn.disabled = true;
