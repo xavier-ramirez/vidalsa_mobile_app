@@ -2,6 +2,7 @@
  * Vidalsa Mobile — APK Capacitor (orquestador).
  */
 
+import './toast.js'; // expone window.showToast globalmente
 import { auth } from './auth.js';
 import { sync } from './sync.js';
 import { equipos } from './equipos.js';
@@ -155,14 +156,58 @@ const app = {
     },
 
     bindCreateButton() {
-        const btn = document.getElementById('btnRegistrarEquipo');
-        if (!btn) return;
-        // Solo se muestra si el usuario tiene permiso para crear equipos
         const u = auth.getUser() || {};
-        btn.style.display = u.puede_movilizar ? 'flex' : 'none';
-        if (!btn.dataset.bound) {
-            btn.dataset.bound = '1';
-            btn.addEventListener('click', () => equiposForm.openCreate());
+
+        // Botón "Acciones" (dropdown estilo web)
+        const accBtn = document.getElementById('btnEquiposAcciones');
+        const accMenu = document.getElementById('equiposAccionesDropdown');
+        if (accBtn && !accBtn.dataset.bound) {
+            accBtn.dataset.bound = '1';
+            accBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                accMenu?.classList.toggle('open');
+            });
+        }
+        // Cerrar dropdown al click fuera
+        if (!document._equiposAccionesOutsideBound) {
+            document._equiposAccionesOutsideBound = true;
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#equiposAccionesDropdown') && !e.target.closest('#btnEquiposAcciones')) {
+                    accMenu?.classList.remove('open');
+                }
+            });
+        }
+
+        // Items del dropdown — visibilidad por permiso
+        const dropNuevo = document.getElementById('dropNuevoEquipo');
+        if (dropNuevo) {
+            dropNuevo.style.display = u.puede_movilizar ? 'flex' : 'none';
+            if (!dropNuevo.dataset.bound) {
+                dropNuevo.dataset.bound = '1';
+                dropNuevo.addEventListener('click', () => {
+                    accMenu?.classList.remove('open');
+                    if (!u.puede_movilizar) {
+                        window.showToast?.('No tienes permiso para registrar equipos.', 'error');
+                        return;
+                    }
+                    equiposForm.openCreate();
+                });
+            }
+        }
+        const dropDel = document.getElementById('dropBulkDelete');
+        if (dropDel) {
+            dropDel.style.display = u.es_super_admin ? 'flex' : 'none';
+            if (!dropDel.dataset.bound) {
+                dropDel.dataset.bound = '1';
+                dropDel.addEventListener('click', () => {
+                    accMenu?.classList.remove('open');
+                    if (!u.es_super_admin) {
+                        window.showToast?.('Solo el super administrador puede eliminar equipos.', 'error');
+                        return;
+                    }
+                    equiposBulk.bulkDelete();
+                });
+            }
         }
     },
 

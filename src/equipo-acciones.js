@@ -40,7 +40,7 @@ export const equipoAcciones = {
             try { await sync.syncMisEquipos(); } catch {}
             this.closeChangeEstado();
             if (window._equiposModuleRefresh) window._equiposModuleRefresh();
-            alert('Estado actualizado.');
+            window.showToast?.('Estado actualizado.', 'success');
         } catch (e) {
             err.innerHTML = `<i class="material-icons" style="font-size:18px;">error_outline</i> <span>${escapeHtml(e.message)}</span>`;
             err.style.display = 'flex';
@@ -86,7 +86,7 @@ export const equipoAcciones = {
                 tipo_intervencion: tipo || 'CORRECTIVA',
             });
             this.closeReportarFalla();
-            alert(`Falla reportada: ${data.CODIGO_REPORTE || 'OK'}.`);
+            window.showToast?.(`Falla reportada: ${data.CODIGO_REPORTE || 'OK'}.`, 'success');
         } catch (e) {
             err.innerHTML = `<i class="material-icons" style="font-size:18px;">error_outline</i> <span>${escapeHtml(e.message)}</span>`;
             err.style.display = 'flex';

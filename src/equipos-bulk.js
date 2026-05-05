@@ -76,7 +76,7 @@ export const equiposBulk = {
             this.clearAll();
             document.getElementById('bulkMovOverlay').classList.remove('open');
             if (window._equiposModuleRefresh) window._equiposModuleRefresh();
-            alert(data.message || 'Movilización completada.');
+            window.showToast?.(data.message || 'Movilización completada.', 'success');
         } catch (e) {
             err.innerHTML = `<i class="material-icons" style="font-size:18px;">error_outline</i> <span>${escapeHtml(e.message)}</span>`;
             err.style.display = 'flex';
@@ -107,12 +107,32 @@ export const equiposBulk = {
             this.clearAll();
             document.getElementById('bulkUbicOverlay').classList.remove('open');
             if (window._equiposModuleRefresh) window._equiposModuleRefresh();
-            alert(data.message || 'Ubicación actualizada.');
+            window.showToast?.(data.message || 'Ubicación actualizada.', 'success');
         } catch (e) {
             err.innerHTML = `<i class="material-icons" style="font-size:18px;">error_outline</i> <span>${escapeHtml(e.message)}</span>`;
             err.style.display = 'flex';
         } finally {
             btn.disabled = false; btn.textContent = 'Aplicar';
+        }
+    },
+
+    /* ── BULK DELETE ── */
+    async confirmBulkDelete() {
+        if (_selected.size === 0) return;
+        if (!navigator.onLine) {
+            window.showToast?.('Necesitas conexión.', 'error');
+            return;
+        }
+        const n = _selected.size;
+        if (!confirm(`¿Eliminar ${n} equipo(s) seleccionado(s)? Esta acción puede revertirse desde la papelera.`)) return;
+        try {
+            const data = await api.post('/equipos/bulk-delete', { ids: this.selectedIds() });
+            try { await sync.syncMisEquipos(); } catch {}
+            this.clearAll();
+            if (window._equiposModuleRefresh) window._equiposModuleRefresh();
+            window.showToast?.(data.message || 'Equipos eliminados.', 'success');
+        } catch (e) {
+            window.showToast?.(e.message, 'error');
         }
     },
 
@@ -150,7 +170,7 @@ export const equiposBulk = {
             this.clearAll();
             document.getElementById('bulkAnchorOverlay').classList.remove('open');
             if (window._equiposModuleRefresh) window._equiposModuleRefresh();
-            alert(data.message || 'Operación completada.');
+            window.showToast?.(data.message || 'Operación completada.', 'success');
         } catch (e) {
             err.innerHTML = `<i class="material-icons" style="font-size:18px;">error_outline</i> <span>${escapeHtml(e.message)}</span>`;
             err.style.display = 'flex';
@@ -195,4 +215,7 @@ export const equiposBulk = {
         const ancBtn = document.getElementById('btnBulkAnclaje');
         if (ancBtn && !u.puede_estado) ancBtn.style.display = 'none';
     },
+
+    /** Para que el menú "Acciones" llame al delete. */
+    bulkDelete() { this.confirmBulkDelete(); },
 };

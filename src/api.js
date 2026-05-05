@@ -42,7 +42,12 @@ async function request(method, path, body = null) {
     }
 
     if (!res.ok) {
-        const msg = (data && (data.error || data.message)) || `Error HTTP ${res.status}`;
+        let msg = (data && (data.error || data.message)) || `Error HTTP ${res.status}`;
+        // 403 = sin permiso. La web muestra un toast bonito; replicamos.
+        if (res.status === 403) {
+            msg = 'No tienes permiso para realizar esta operación.';
+            if (window.showToast) window.showToast(msg, 'error');
+        }
         const err = new Error(msg);
         err.status = res.status;
         err.data = data;

@@ -227,6 +227,64 @@
         .selection-actions .selection-ubic i { color: #f59e0b; }
         .selection-actions .selection-anch i { color: #16a34a; }
 
+        /* Toast notifications (replica del .toast-container web) */
+        .toast-container {
+            position: fixed; top: 80px; right: 16px; z-index: 10000;
+            display: flex; flex-direction: column; gap: 8px;
+            pointer-events: none;
+        }
+        .toast-notification {
+            display: flex; align-items: center; gap: 8px;
+            background: white; border-radius: 12px; padding: 12px 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 4px solid #0067b1;
+            font-size: 14px; color: #1e293b; font-weight: 600;
+            min-width: 240px; max-width: calc(100vw - 32px);
+            animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+        }
+        .toast-notification.success { border-left-color: #16a34a; }
+        .toast-notification.success i { color: #16a34a; }
+        .toast-notification.error   { border-left-color: #dc2626; }
+        .toast-notification.error i { color: #dc2626; }
+        .toast-notification.warning { border-left-color: #f59e0b; }
+        .toast-notification.warning i { color: #f59e0b; }
+        .toast-notification.info i  { color: #0067b1; }
+        .toast-notification.fade-out { animation: toastFadeOut 0.3s forwards; }
+        @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastFadeOut { to { transform: translateX(100%); opacity: 0; } }
+
+        /* Botón "Acciones" + dropdown (estilo web) */
+        .equipos-acciones-wrap { position: relative; }
+        .btn-acciones {
+            background: linear-gradient(135deg, #0067b1, #004481); color: white;
+            border: none; border-radius: 10px; padding: 8px 14px;
+            font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit;
+            display: inline-flex; align-items: center; gap: 6px;
+            box-shadow: 0 2px 6px rgba(0,103,177,0.3);
+        }
+        .btn-acciones i { font-size: 18px; }
+        .acciones-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0;
+            min-width: 220px; background: white; border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12); border: 1px solid #e2e8f0;
+            z-index: 800; overflow: hidden;
+            animation: slideDown 0.2s ease-out;
+        }
+        .acciones-dropdown.open { display: block; }
+        .acciones-dropdown button {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 12px 14px; border: none; background: white;
+            color: #475569; cursor: pointer; font-family: inherit;
+            font-size: 13px; font-weight: 600; text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .acciones-dropdown button:last-child { border-bottom: none; }
+        .acciones-dropdown button:hover { background: #f8fafc; color: #0067b1; }
+        .acciones-dropdown button i { font-size: 18px; }
+        .acciones-dropdown button.danger { color: #b91c1c; }
+        .acciones-dropdown button.danger i { color: #dc2626; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
         /* Spinner tradicional al filtrar (similar al preloader web) */
         .equipos-spinner {
             display: none; align-items: center; justify-content: center; gap: 8px;
@@ -656,11 +714,24 @@
                     <input type="text" id="equiposSearch" placeholder="Buscar por código, placa, marca, modelo..." autocomplete="off" />
                 </div>
 
-                <!-- Barra de filtros -->
+                <!-- Barra de filtros + Acciones (estilo web) -->
                 <div class="equipos-filters-bar">
                     <button type="button" id="equiposFiltrosToggle">
                         <i class="material-icons">tune</i> Filtros
                     </button>
+                    <div class="equipos-acciones-wrap" style="margin-left:auto;">
+                        <button type="button" class="btn-acciones" id="btnEquiposAcciones">
+                            <i class="material-icons">apps</i> Acciones <i class="material-icons" style="font-size:14px;">expand_more</i>
+                        </button>
+                        <div class="acciones-dropdown" id="equiposAccionesDropdown">
+                            <button type="button" id="dropNuevoEquipo">
+                                <i class="material-icons" style="color:#0284c7;">add_circle</i> Nuevo Equipo
+                            </button>
+                            <button type="button" id="dropBulkDelete" class="danger">
+                                <i class="material-icons">delete_outline</i> Eliminar seleccionados
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Panel filtros (colapsable) -->
@@ -729,6 +800,7 @@
                     <span>Cargando…</span>
                 </div>
                 <div id="equiposListContainer" class="equipos-list"></div>
+                <!-- FAB legacy (oculto: ahora se usa el menú Acciones de arriba) -->
                 <button type="button" class="fab-register" id="btnRegistrarEquipo" title="Registrar nuevo equipo" style="display:none;">
                     <i class="material-icons">add</i>
                 </button>
