@@ -1,0 +1,62 @@
+name: Build APK
+
+# Cuándo se dispara: cada push a main, o manualmente desde la pestaña Actions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compilar APK debug
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Bajar el código del repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Node.js para compilar el bundle web (Vite + Capacitor)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Instalar dependencias y compilar el dist/ (Vite)
+      - name: npm install
+        run: npm ci
+
+      - name: Build web (Vite)
+        run: npm run build
+
+      # 4. Sincronizar el bundle web con el proyecto Android (Capacitor)
+      - name: Capacitor sync android
+        run: npx cap sync android
+
+      # 5. Java 17 (requerido por Capacitor 6 + AGP)
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 6. Android SDK (preinstalado en runners ubuntu pero forzamos versión)
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 7. Permisos de ejecución para gradlew (en linux runners)
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      # 8. Compilar APK debug
+      - name: Build APK (debug)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      # 9. Subir el APK como artifact descargable
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidalsa-mobile-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
