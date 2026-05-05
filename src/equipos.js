@@ -10,6 +10,7 @@ import { equiposForm } from './equipos-form.js';
 import { pdfViewer } from './pdf-viewer.js';
 import { equipoAcciones } from './equipo-acciones.js';
 import { movilizacionForm } from './movilizacion-form.js';
+import { equiposBulk } from './equipos-bulk.js';
 import { escapeHtml } from './util.js';
 
 const FILTER_IDS = ['filtroFrente','filtroTipo','filtroEstado','filtroCategoria','filtroAnio','filtroDocPropiedad','filtroDocPoliza','filtroDocRotc','filtroDocRacda'];
@@ -109,6 +110,9 @@ export const equipos = {
     renderList(filterText = '') {
         const container = document.getElementById('equiposListContainer');
         if (!container) return;
+        // Spinner mientras filtra (similar al de la web — preloader fugaz)
+        const spinner = document.getElementById('equiposLoadingSpinner');
+        if (spinner) spinner.style.display = 'flex';
         const all = sync.getEquiposLocal();
         const filters = getActiveFilters();
         const list = applyFilters(all, filters, filterText);
@@ -121,6 +125,7 @@ export const equipos = {
                     <p>No hay equipos descargados.<br>Ve a <strong>Sincronización</strong> y descarga la flota.</p>
                 </div>
             `;
+            if (spinner) spinner.style.display = 'none';
             return;
         }
 
@@ -131,6 +136,7 @@ export const equipos = {
                     <p>Sin coincidencias para "<strong>${escapeHtml(filterText)}</strong>".</p>
                 </div>
             `;
+            if (spinner) spinner.style.display = 'none';
             return;
         }
 
@@ -138,8 +144,9 @@ export const equipos = {
             const estado = (eq.ESTADO_OPERATIVO || '').toUpperCase();
             const badgeClass = estado === 'OPERATIVO' ? 'badge-ok'
                 : estado === 'INOPERATIVO' ? 'badge-bad' : 'badge-warn';
+            const sel = equiposBulk.isSelected(eq.ID_EQUIPO) ? ' is-selected' : '';
             return `
-                <div class="equipo-card" data-id="${eq.ID_EQUIPO}">
+                <div class="equipo-card${sel}" data-id="${eq.ID_EQUIPO}" data-codigo="${escapeHtml(eq.CODIGO_PATIO || '')}">
                     <div class="equipo-card-head">
                         <span class="equipo-codigo">${escapeHtml(eq.CODIGO_PATIO || 'S/C')}</span>
                         <span class="badge-status ${badgeClass}">${escapeHtml(estado || '—')}</span>
@@ -158,13 +165,25 @@ export const equipos = {
             `;
         }).join('');
 
-        // Bind: solo el ícono de OJO abre el modal (mismo patrón que la web).
+        // Bind: ícono OJO abre modal. Click en el resto de la card alterna selección.
         container.querySelectorAll('.equipo-card-eye').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.openDetailModal(btn.getAttribute('data-eye-id'));
             });
         });
+        container.querySelectorAll('.equipo-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.equipo-card-eye')) return;
+                const id = card.getAttribute('data-id');
+                const codigo = card.getAttribute('data-codigo');
+                equiposBulk.toggle(id, codigo);
+                card.classList.toggle('is-selected', equiposBulk.isSelected(id));
+            });
+        });
+
+        // Apagar spinner tras render
+        if (spinner) spinner.style.display = 'none';
     },
 
     bindSearch() {

@@ -10,6 +10,7 @@ import { pdfViewer } from './pdf-viewer.js';
 import { historial } from './historial.js';
 import { movilizacionForm } from './movilizacion-form.js';
 import { equipoAcciones } from './equipo-acciones.js';
+import { equiposBulk } from './equipos-bulk.js';
 import { password } from './password.js';
 
 const app = {
@@ -38,6 +39,7 @@ const app = {
         password.bindControls();
         movilizacionForm.bindControls();
         equipoAcciones.bindControls();
+        equiposBulk.bindControls();
         historial.bindControls();
         this.bindSyncButtons();
         this.bindCreateButton();
@@ -154,7 +156,11 @@ const app = {
 
     bindCreateButton() {
         const btn = document.getElementById('btnRegistrarEquipo');
-        if (btn && !btn.dataset.bound) {
+        if (!btn) return;
+        // Solo se muestra si el usuario tiene permiso para crear equipos
+        const u = auth.getUser() || {};
+        btn.style.display = u.puede_movilizar ? 'flex' : 'none';
+        if (!btn.dataset.bound) {
             btn.dataset.bound = '1';
             btn.addEventListener('click', () => equiposForm.openCreate());
         }
