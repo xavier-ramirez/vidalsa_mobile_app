@@ -8,6 +8,7 @@ import { equipos } from './equipos.js';
 import { equiposForm } from './equipos-form.js';
 import { pdfViewer } from './pdf-viewer.js';
 import { historial } from './historial.js';
+import { password } from './password.js';
 
 const app = {
     init() {
@@ -32,8 +33,11 @@ const app = {
         equipos.bindModalClose();
         equiposForm.bindControls();
         pdfViewer.bindControls();
+        password.bindControls();
         this.bindSyncButtons();
         this.bindCreateButton();
+        this.bindMenuGroups();
+        this.bindPasswordButton();
 
         // Hook para que el form de equipos pueda refrescar la lista
         window._equiposModuleRefresh = () => {
@@ -109,9 +113,10 @@ const app = {
                 const target = document.getElementById(targetId);
                 if (target) target.classList.add('active');
                 menu.classList.remove('active');
-                if (targetId === 'view-equipos')   equipos.renderList(document.getElementById('equiposSearch')?.value || '');
-                if (targetId === 'view-sync')      this.renderSyncStatus();
-                if (targetId === 'view-historial') historial.renderEquipoSelector();
+                if (targetId === 'view-equipos')    equipos.renderList(document.getElementById('equiposSearch')?.value || '');
+                if (targetId === 'view-auxiliares') equipos.renderList(document.getElementById('equiposSearch')?.value || ''); // placeholder
+                if (targetId === 'view-sync')       this.renderSyncStatus();
+                if (targetId === 'view-historial')  historial.renderEquipoSelector();
             });
         });
 
@@ -146,6 +151,26 @@ const app = {
         }
     },
 
+    bindMenuGroups() {
+        document.querySelectorAll('.mobile-nav-group-title').forEach(t => {
+            if (t.dataset.bound) return;
+            t.dataset.bound = '1';
+            t.addEventListener('click', () => t.parentElement.classList.toggle('open'));
+        });
+    },
+
+    bindPasswordButton() {
+        const btn = document.getElementById('btnChangePassword');
+        if (btn && !btn.dataset.bound) {
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('mobileMenu')?.classList.remove('active');
+                password.open();
+            });
+        }
+    },
+
     async runSync({ silent = false } = {}) {
         const btn = document.getElementById('btnSyncNow');
         const status = document.getElementById('syncStatusMsg');
@@ -174,8 +199,14 @@ const app = {
 
     renderUserHeader() {
         const u = auth.getUser();
-        const el = document.getElementById('userBadge');
-        if (el && u) el.textContent = u.nombre || u.correo || 'Usuario';
+        if (!u) return;
+        const name = u.nombre || u.correo || 'Usuario';
+        const role = (u.nivel === 1 || u.nivel === '1') ? 'Acceso Global' : 'Acceso Local';
+        const initial = (name.trim()[0] || 'U').toUpperCase();
+        const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setText('userBadge', name);
+        setText('userRole',  role);
+        setText('userAvatar', initial);
     },
 
     bindNetworkStatus() {

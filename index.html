@@ -69,6 +69,39 @@
         .mobile-menu { top: calc(60px + env(safe-area-inset-top)); }
         #userBadge { font-size: 11px; color: rgba(255,255,255,0.85); margin-right: 8px; }
 
+        /* ── Menú móvil estilo web ── */
+        .mobile-user-header-compact {
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;
+        }
+        .muhc-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #0067b1, #004481);
+            color: white; font-weight: 800; font-size: 15px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .muhc-text { display: flex; flex-direction: column; min-width: 0; }
+        .muhc-name { font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.2;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .muhc-role { font-size: 11px; color: #64748b; }
+
+        .mobile-nav-group { border-bottom: 1px solid #f1f5f9; }
+        .mobile-nav-group-title {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; cursor: pointer; user-select: none;
+            font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .mobile-nav-group-title i.material-icons { color: #0067b1; font-size: 18px; }
+        .mobile-nav-group-title .chevron { transition: transform 0.2s; color: #94a3b8; }
+        .mobile-nav-group.open .mobile-nav-group-title .chevron { transform: rotate(180deg); }
+        .mobile-nav-group-content { display: none; background: #fafbfc; }
+        .mobile-nav-group.open .mobile-nav-group-content { display: block; }
+        .mobile-nav-group-content .mobile-nav-link { padding-left: 36px; font-size: 13px; }
+
+        .mobile-nav-separator { height: 1px; background: #e2e8f0; margin: 6px 0; }
+        .mobile-logout { color: #dc2626 !important; font-weight: 700; }
+
         .view-container { display: none; padding: 15px; }
         .view-container.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -367,16 +400,57 @@
         </div>
 
         <div class="mobile-menu" id="mobileMenu">
-            <a href="#" class="mobile-nav-link active" data-target="view-equipos">
-                <i class="material-icons">agriculture</i> Equipos
-            </a>
+            <!-- Header usuario compacto (igual que web) -->
+            <div class="mobile-user-header-compact">
+                <div class="muhc-avatar" id="userAvatar">U</div>
+                <div class="muhc-text">
+                    <span class="muhc-name" id="userBadge">Usuario</span>
+                    <span class="muhc-role" id="userRole">Móvil</span>
+                </div>
+            </div>
+
+            <!-- Grupo Flota (colapsable) -->
+            <div class="mobile-nav-group open" id="grpFlota">
+                <div class="mobile-nav-group-title">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="material-icons">agriculture</i> Flota
+                    </div>
+                    <i class="material-icons chevron">expand_more</i>
+                </div>
+                <div class="mobile-nav-group-content">
+                    <a href="#" class="mobile-nav-link active" data-target="view-equipos">
+                        <i class="material-icons">agriculture</i> Vehículos
+                    </a>
+                    <a href="#" class="mobile-nav-link" data-target="view-auxiliares">
+                        <i class="material-icons">construction</i> Equipos Auxiliares
+                    </a>
+                </div>
+            </div>
+
             <a href="#" class="mobile-nav-link" data-target="view-historial">
-                <i class="material-icons">history</i> Historial movilizaciones
+                <i class="material-icons">local_shipping</i> Historial Mov.
             </a>
-            <a href="#" class="mobile-nav-link" data-target="view-sync">
-                <i class="material-icons">sync</i> Sincronización
-            </a>
-            <a href="#" class="mobile-nav-link" id="logoutBtn">
+
+            <!-- Grupo Configuraciones (colapsable) -->
+            <div class="mobile-nav-group" id="grpConfig">
+                <div class="mobile-nav-group-title">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="material-icons">settings</i> Configuraciones
+                    </div>
+                    <i class="material-icons chevron">expand_more</i>
+                </div>
+                <div class="mobile-nav-group-content">
+                    <a href="#" class="mobile-nav-link" id="btnChangePassword">
+                        <i class="material-icons">lock</i> Cambiar contraseña
+                    </a>
+                    <a href="#" class="mobile-nav-link" data-target="view-sync">
+                        <i class="material-icons">sync</i> Sincronización
+                    </a>
+                </div>
+            </div>
+
+            <div class="mobile-nav-separator"></div>
+            <a href="#" class="mobile-nav-link mobile-logout" id="logoutBtn">
                 <i class="material-icons">logout</i> Cerrar sesión
             </a>
         </div>
@@ -393,6 +467,19 @@
                 <button type="button" class="fab-register" id="btnRegistrarEquipo" title="Registrar nuevo equipo">
                     <i class="material-icons">add</i>
                 </button>
+            </div>
+
+            <!-- VISTA EQUIPOS AUXILIARES (placeholder de próxima fase) -->
+            <div id="view-auxiliares" class="view-container">
+                <div class="placeholder-card">
+                    <div class="placeholder-icon-wrap">
+                        <i class="material-icons" style="font-size:36px; color:#0284c7;">construction</i>
+                    </div>
+                    <h2 style="margin:0 0 8px; color:#0f172a; font-weight:800; font-size:18px;">Equipos Auxiliares</h2>
+                    <p style="color:#475569; font-size:13px; line-height:1.5; margin:0;">
+                        Listado de auxiliares (compresores, soldadoras, etc.) — próxima fase.
+                    </p>
+                </div>
             </div>
 
             <!-- VISTA HISTORIAL -->
@@ -468,6 +555,41 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL CAMBIAR CONTRASEÑA -->
+    <div id="pwdOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
+        <div class="eqf-card">
+            <div class="eqf-head">
+                <h3>Cambiar contraseña</h3>
+                <button class="modal-close-btn" id="pwdClose" aria-label="Cerrar">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="eqf-body">
+                <div id="pwdError" class="eqf-error"></div>
+                <div id="pwdSuccess" style="display:none; align-items:center; gap:8px; background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px;"></div>
+                <div class="eqf-group">
+                    <label for="pwdCurrent">Contraseña actual *</label>
+                    <input type="password" id="pwdCurrent" autocomplete="current-password" />
+                </div>
+                <div class="eqf-group">
+                    <label for="pwdNew">Nueva contraseña (mín. 8) *</label>
+                    <input type="password" id="pwdNew" autocomplete="new-password" />
+                </div>
+                <div class="eqf-group">
+                    <label for="pwdConfirm">Confirmar nueva contraseña *</label>
+                    <input type="password" id="pwdConfirm" autocomplete="new-password" />
+                </div>
+            </div>
+            <div class="eqf-foot">
+                <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('pwdOverlay').classList.remove('open');">Cancelar</button>
+                <button type="button" class="eqf-btn eqf-btn-submit" id="pwdSubmit">Cambiar contraseña</button>
+            </div>
+        </div>
+    </div>
+    <style>
+        #pwdOverlay.open { display: flex !important; animation: fadeIn 0.2s; }
+    </style>
 
     <!-- VISOR PDF EMBEBIDO -->
     <div id="pdfViewerOverlay" role="dialog" aria-modal="true">
