@@ -4,9 +4,12 @@
  */
 
 import { api } from './api.js';
+import { auth } from './auth.js';
 import { sync } from './sync.js';
 import { equiposForm } from './equipos-form.js';
 import { pdfViewer } from './pdf-viewer.js';
+import { equipoAcciones } from './equipo-acciones.js';
+import { movilizacionForm } from './movilizacion-form.js';
 import { escapeHtml } from './util.js';
 
 const FILTER_IDS = ['filtroFrente','filtroTipo','filtroEstado','filtroCategoria','filtroAnio','filtroDocPropiedad','filtroDocPoliza','filtroDocRotc','filtroDocRacda'];
@@ -233,14 +236,32 @@ export const equipos = {
                 h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
             });
 
-            // Bind botón editar
+            // Set context para las acciones (movilizar/estado/falla)
+            equipoAcciones.setContext({ ID_EQUIPO: data.ID_EQUIPO, CODIGO_PATIO: data.CODIGO_PATIO, ID_FRENTE_ACTUAL: data.ID_FRENTE_ACTUAL });
+
+            // Bind botones de acción del modal
             const editBtn = body.querySelector('#btnEditEquipoFromModal');
-            if (editBtn) {
-                editBtn.addEventListener('click', () => {
-                    this.closeDetailModal();
-                    equiposForm.openEdit(editBtn.getAttribute('data-equipo-id'));
-                });
-            }
+            if (editBtn) editBtn.addEventListener('click', () => {
+                this.closeDetailModal();
+                equiposForm.openEdit(editBtn.getAttribute('data-equipo-id'));
+            });
+            const movBtn = body.querySelector('#btnMovilizarFromModal');
+            if (movBtn) movBtn.addEventListener('click', () => {
+                this.closeDetailModal();
+                movilizacionForm.open();
+                // Pre-seleccionar el equipo en el form
+                setTimeout(() => {
+                    const sel = document.getElementById('movEquipo');
+                    if (sel) sel.value = String(data.ID_EQUIPO);
+                }, 50);
+            });
+            const estBtn = body.querySelector('#btnCambiarEstadoFromModal');
+            if (estBtn) estBtn.addEventListener('click', () => equipoAcciones.openChangeEstado());
+            const failBtn = body.querySelector('#btnReportarFallaFromModal');
+            if (failBtn) failBtn.addEventListener('click', () => equipoAcciones.openReportarFalla());
+
+            // Cargar lista de responsables (async, llena acordeón)
+            equipoAcciones.loadResponsables(data.ID_EQUIPO);
 
             // Bind botones PDF (visor embebido)
             body.querySelectorAll('.pdf-btn[data-pdf-tipo]').forEach(btn => {
@@ -262,6 +283,7 @@ export const equipos = {
     },
 
     renderDetailHTML(d) {
+        const u = auth.getUser() || {};
         const docRow = (label, valor, hasFile, tipo) => `
             <div class="detalle-row">
                 <span class="detalle-label">${escapeHtml(label)}</span>
@@ -296,8 +318,20 @@ export const equipos = {
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="modal-action-btn" id="btnEditEquipoFromModal" data-equipo-id="${d.ID_EQUIPO}">
-                    <i class="material-icons">edit</i> Editar datos
+                ${u.puede_editar ? `
+                    <button type="button" class="modal-action-btn" id="btnEditEquipoFromModal" data-equipo-id="${d.ID_EQUIPO}" title="Editar datos">
+                        <i class="material-icons">edit</i> Editar
+                    </button>` : ''}
+                ${u.puede_movilizar ? `
+                    <button type="button" class="modal-action-btn" id="btnMovilizarFromModal" title="Movilizar">
+                        <i class="material-icons">local_shipping</i> Movilizar
+                    </button>` : ''}
+                ${u.puede_estado ? `
+                    <button type="button" class="modal-action-btn modal-action-warn" id="btnCambiarEstadoFromModal" title="Cambiar estado">
+                        <i class="material-icons">swap_horiz</i> Estado
+                    </button>` : ''}
+                <button type="button" class="modal-action-btn modal-action-danger" id="btnReportarFallaFromModal" title="Reportar falla">
+                    <i class="material-icons">report_problem</i> Falla
                 </button>
             </div>
 
@@ -319,6 +353,16 @@ export const equipos = {
                     ${infoRow('Serial Motor',    d.SERIAL_MOTOR)}
                     ${infoRow('Nº Etiqueta',     d.NUMERO_ETIQUETA)}
                     ${infoRow('Estado',          d.ESTADO_OPERATIVO)}
+                </div>
+            </div>
+
+            <div class="accordion-section">
+                <div class="accordion-header">
+                    <span><i class="material-icons">people</i> Responsables</span>
+                    <i class="material-icons accordion-chev">expand_more</i>
+                </div>
+                <div class="accordion-body">
+                    <div id="respList" class="resp-list"><div class="resp-empty">Cargando…</div></div>
                 </div>
             </div>
         `;

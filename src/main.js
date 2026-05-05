@@ -9,6 +9,7 @@ import { equiposForm } from './equipos-form.js';
 import { pdfViewer } from './pdf-viewer.js';
 import { historial } from './historial.js';
 import { movilizacionForm } from './movilizacion-form.js';
+import { equipoAcciones } from './equipo-acciones.js';
 import { password } from './password.js';
 
 const app = {
@@ -36,6 +37,7 @@ const app = {
         pdfViewer.bindControls();
         password.bindControls();
         movilizacionForm.bindControls();
+        equipoAcciones.bindControls();
         historial.bindControls();
         this.bindSyncButtons();
         this.bindCreateButton();

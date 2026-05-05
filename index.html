@@ -266,14 +266,29 @@
             color: #dc2626; text-decoration: none; border: none; cursor: pointer;
         }
         .pdf-btn i { font-size: 20px; }
-        .modal-actions { padding: 14px 16px 4px; display: flex; gap: 8px; }
+        .modal-actions { padding: 14px 16px 4px; display: flex; flex-wrap: wrap; gap: 6px; }
         .modal-action-btn {
-            flex: 1; display: inline-flex; align-items: center; justify-content: center;
-            gap: 6px; padding: 12px; border-radius: 10px; cursor: pointer; border: none;
+            flex: 1 1 calc(50% - 6px); min-width: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 4px; padding: 10px 8px; border-radius: 10px; cursor: pointer; border: none;
             background: linear-gradient(135deg, #0067b1, #004481); color: white;
-            font-weight: 700; font-size: 13px; font-family: inherit;
+            font-weight: 700; font-size: 12px; font-family: inherit;
         }
-        .modal-action-btn i { font-size: 18px; }
+        .modal-action-btn i { font-size: 16px; }
+        .modal-action-btn.modal-action-warn   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .modal-action-btn.modal-action-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+
+        .resp-list { display: flex; flex-direction: column; gap: 6px; }
+        .resp-empty { color: #64748b; font-size: 12px; padding: 8px 0; text-align: center; }
+        .resp-empty.error { color: #b91c1c; }
+        .resp-item {
+            display: flex; align-items: center; gap: 10px; background: #f8fafc;
+            border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px;
+        }
+        .resp-item i { color: #0067b1; }
+        .resp-info { display: flex; flex-direction: column; font-size: 12px; }
+        .resp-info strong { color: #0f172a; font-weight: 700; }
+        .resp-info span { color: #64748b; font-size: 11px; }
 
         /* ── HISTORIAL ── */
         .hist-card {
@@ -826,6 +841,76 @@
         </div>
     </div>
     <style> #movFormOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
+
+    <!-- MODAL CAMBIAR ESTADO OPERATIVO -->
+    <div id="estadoOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
+        <div class="eqf-card">
+            <div class="eqf-head">
+                <h3>Cambiar estado: <span id="estadoEquipoLabel"></span></h3>
+                <button class="modal-close-btn" id="estadoClose" aria-label="Cerrar"><i class="material-icons">close</i></button>
+            </div>
+            <div class="eqf-body">
+                <div id="estadoError" class="eqf-error"></div>
+                <div class="eqf-group">
+                    <label for="estadoSelect">Nuevo estado *</label>
+                    <select id="estadoSelect">
+                        <option value="">— Selecciona —</option>
+                        <option value="OPERATIVO">OPERATIVO</option>
+                        <option value="EN MANTENIMIENTO">EN MANTENIMIENTO</option>
+                        <option value="INOPERATIVO">INOPERATIVO</option>
+                        <option value="DESINCORPORADO">DESINCORPORADO</option>
+                    </select>
+                </div>
+            </div>
+            <div class="eqf-foot">
+                <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('estadoOverlay').classList.remove('open');">Cancelar</button>
+                <button type="button" class="eqf-btn eqf-btn-submit" id="estadoSubmit">Cambiar estado</button>
+            </div>
+        </div>
+    </div>
+    <style> #estadoOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
+
+    <!-- MODAL REPORTAR FALLA -->
+    <div id="fallaOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
+        <div class="eqf-card">
+            <div class="eqf-head">
+                <h3>Reportar falla: <span id="fallaEquipoLabel"></span></h3>
+                <button class="modal-close-btn" id="fallaClose" aria-label="Cerrar"><i class="material-icons">close</i></button>
+            </div>
+            <div class="eqf-body">
+                <div id="fallaError" class="eqf-error"></div>
+                <div class="eqf-group">
+                    <label for="fallaDescripcion">Descripción de la falla *</label>
+                    <textarea id="fallaDescripcion" rows="4" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #cbd5e0; border-radius:10px; font-size:14px; background:#f8fafc; outline:none; font-family:inherit; resize:vertical;" placeholder="Ej: Se detuvo el motor durante operación..."></textarea>
+                </div>
+                <div class="eqf-group">
+                    <label for="fallaSistema">Sistema afectado</label>
+                    <input type="text" id="fallaSistema" placeholder="Ej: Motor, Hidráulico, Eléctrico" />
+                </div>
+                <div class="eqf-group">
+                    <label for="fallaPrioridad">Prioridad</label>
+                    <select id="fallaPrioridad">
+                        <option value="BAJA">Baja</option>
+                        <option value="MEDIA" selected>Media</option>
+                        <option value="ALTA">Alta</option>
+                        <option value="CRITICA">Crítica</option>
+                    </select>
+                </div>
+                <div class="eqf-group">
+                    <label for="fallaTipoInterv">Tipo de intervención</label>
+                    <select id="fallaTipoInterv">
+                        <option value="CORRECTIVA" selected>Correctiva</option>
+                        <option value="PREVENTIVA">Preventiva</option>
+                    </select>
+                </div>
+            </div>
+            <div class="eqf-foot">
+                <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('fallaOverlay').classList.remove('open');">Cancelar</button>
+                <button type="button" class="eqf-btn eqf-btn-submit" id="fallaSubmit">Reportar falla</button>
+            </div>
+        </div>
+    </div>
+    <style> #fallaOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
 
     <!-- MODAL CAMBIAR CONTRASEÑA -->
     <div id="pwdOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">

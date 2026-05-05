@@ -52,10 +52,11 @@ async function request(method, path, body = null) {
 }
 
 export const api = {
-    get:  (path)        => request('GET',  path),
-    post: (path, body)  => request('POST', path, body),
-    put:  (path, body)  => request('PUT',  path, body),
-    del:  (path)        => request('DELETE', path),
+    get:   (path)        => request('GET',  path),
+    post:  (path, body)  => request('POST', path, body),
+    put:   (path, body)  => request('PUT',  path, body),
+    patch: (path, body)  => request('PATCH', path, body),
+    del:   (path)        => request('DELETE', path),
     /** Descarga binario (PDF). Devuelve Blob. */
     async getBlob(path) {
         const headers = { 'Accept': 'application/pdf' };
