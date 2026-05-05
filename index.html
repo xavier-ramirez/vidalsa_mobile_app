@@ -230,6 +230,52 @@
         }
         .hist-meta span, .hist-user { display: inline-flex; align-items: center; gap: 4px; }
         .hist-meta i, .hist-user i { font-size: 13px; color: #94a3b8; }
+        .hist-equipo {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 13px; color: #0f172a; font-weight: 700; margin-bottom: 6px;
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 6px 10px;
+        }
+        .hist-equipo i { font-size: 16px; color: #0067b1; }
+        .hist-tipo.tipo-recepcion { background: #dcfce7; color: #16a34a; }
+        .hist-tipo.tipo-despacho  { background: #e0f2fe; color: #0369a1; }
+
+        /* Filtros del historial */
+        .hist-filters-bar {
+            display: flex; gap: 8px; margin-bottom: 12px; align-items: center;
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 10px 12px;
+        }
+        .hist-filters-bar button {
+            border: none; background: transparent; cursor: pointer;
+            color: #0067b1; font-weight: 700; font-size: 13px;
+            display: inline-flex; align-items: center; gap: 4px;
+            font-family: inherit;
+        }
+        .hist-counter { color: #64748b; font-size: 12px; margin-left: auto; }
+        .hist-filters-panel {
+            display: none; background: white; border: 1px solid #e2e8f0;
+            border-radius: 12px; padding: 14px; margin-bottom: 12px;
+            flex-direction: column; gap: 10px;
+        }
+        .hist-filters-panel.open { display: flex; }
+        .hist-filters-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+        .hist-filters-grid .full { grid-column: 1 / -1; }
+        .hist-filters-grid label { display: block; font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .hist-filters-grid input, .hist-filters-grid select {
+            width: 100%; box-sizing: border-box; padding: 9px 11px;
+            border: 1px solid #cbd5e0; border-radius: 10px; font-size: 13px;
+            background: #f8fafc; outline: none; font-family: inherit;
+        }
+        .hist-filters-actions { display: flex; gap: 8px; }
+        .hist-filters-actions button {
+            flex: 1; padding: 10px; border: none; cursor: pointer; border-radius: 10px;
+            font-weight: 700; font-size: 13px; font-family: inherit;
+        }
+        .hist-filters-actions .apply  { background: linear-gradient(135deg, #0284c7, #0369a1); color: white; }
+        .hist-filters-actions .clear  { background: white; border: 1px solid #e2e8f0; color: #64748b; }
 
         /* ── EQUIPOS FORM (registrar/editar) ── */
         #eqFormOverlay {
@@ -471,15 +517,62 @@
                 </div>
             </div>
 
-            <!-- VISTA HISTORIAL -->
+            <!-- VISTA HISTORIAL DE MOVILIZACIONES -->
             <div id="view-historial" class="view-container">
-                <div class="equipos-toolbar">
-                    <i class="material-icons">agriculture</i>
-                    <select id="historialEquipoSelect" style="flex:1; border:none; outline:none; background:transparent; font-size:14px; color:#1e293b; font-family:inherit;">
-                        <option value="">— Selecciona un equipo —</option>
-                    </select>
+                <div class="hist-filters-bar">
+                    <button type="button" id="histToggleFiltros">
+                        <i class="material-icons">tune</i> Filtros
+                    </button>
+                    <span class="hist-counter" id="historialCounter"></span>
                 </div>
+
+                <div class="hist-filters-panel" id="histFiltrosPanel">
+                    <div class="hist-filters-grid">
+                        <div class="full">
+                            <label for="histFiltroCodigo">Código de Control</label>
+                            <input type="text" id="histFiltroCodigo" placeholder="Ej: MV-00123" autocomplete="off" />
+                        </div>
+                        <div class="full">
+                            <label for="histFiltroEquipo">Equipo</label>
+                            <select id="histFiltroEquipo"><option value="">— Todos los equipos —</option></select>
+                        </div>
+                        <div>
+                            <label for="histFiltroOrigen">Frente Origen</label>
+                            <select id="histFiltroOrigen"><option value="">— Todos —</option></select>
+                        </div>
+                        <div>
+                            <label for="histFiltroDestino">Frente Destino</label>
+                            <select id="histFiltroDestino"><option value="">— Todos —</option></select>
+                        </div>
+                        <div class="full">
+                            <label for="histFiltroTipo">Tipo de Movimiento</label>
+                            <select id="histFiltroTipo">
+                                <option value="">— Todos —</option>
+                                <option value="DESPACHO">Despacho</option>
+                                <option value="RECEPCION_DIRECTA">Recepción Directa</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="histFiltroDesde">Fecha desde</label>
+                            <input type="date" id="histFiltroDesde" />
+                        </div>
+                        <div>
+                            <label for="histFiltroHasta">Fecha hasta</label>
+                            <input type="date" id="histFiltroHasta" />
+                        </div>
+                    </div>
+                    <div class="hist-filters-actions">
+                        <button type="button" class="clear" id="histLimpiarFiltros">Limpiar</button>
+                        <button type="button" class="apply" id="histAplicarFiltros">Aplicar</button>
+                    </div>
+                </div>
+
                 <div id="historialList"></div>
+                <div id="histScrollSentinel" style="height:1px;"></div>
+
+                <button type="button" class="fab-register" id="btnNuevaMovilizacion" title="Registrar nueva movilización" style="background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 6px 14px rgba(2, 132, 199, 0.5);">
+                    <i class="material-icons">local_shipping</i>
+                </button>
             </div>
 
             <!-- VISTA SYNC -->
@@ -544,6 +637,36 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL CREAR MOVILIZACIÓN -->
+    <div id="movFormOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
+        <div class="eqf-card">
+            <div class="eqf-head">
+                <h3>Registrar Movilización</h3>
+                <button class="modal-close-btn" id="movFormClose" aria-label="Cerrar">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="eqf-body">
+                <div id="movFormError" class="eqf-error"></div>
+                <div id="movFormSuccess" style="display:none; align-items:center; gap:8px; background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px;"></div>
+                <p style="color:#64748b; font-size:13px; margin:0 0 12px;">El frente origen se toma automáticamente del frente actual del equipo.</p>
+                <div class="eqf-group">
+                    <label for="movEquipo">Equipo *</label>
+                    <select id="movEquipo"></select>
+                </div>
+                <div class="eqf-group">
+                    <label for="movDestino">Frente Destino *</label>
+                    <select id="movDestino"></select>
+                </div>
+            </div>
+            <div class="eqf-foot">
+                <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('movFormOverlay').classList.remove('open');">Cancelar</button>
+                <button type="button" class="eqf-btn eqf-btn-submit" id="movFormSubmit">Registrar movilización</button>
+            </div>
+        </div>
+    </div>
+    <style> #movFormOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
 
     <!-- MODAL CAMBIAR CONTRASEÑA -->
     <div id="pwdOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">

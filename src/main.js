@@ -8,6 +8,7 @@ import { equipos } from './equipos.js';
 import { equiposForm } from './equipos-form.js';
 import { pdfViewer } from './pdf-viewer.js';
 import { historial } from './historial.js';
+import { movilizacionForm } from './movilizacion-form.js';
 import { password } from './password.js';
 
 const app = {
@@ -34,10 +35,15 @@ const app = {
         equiposForm.bindControls();
         pdfViewer.bindControls();
         password.bindControls();
+        movilizacionForm.bindControls();
+        historial.bindControls();
         this.bindSyncButtons();
         this.bindCreateButton();
         this.bindMenuGroups();
         this.bindPasswordButton();
+        this.bindMovilizacionButton();
+        // Hook para refrescar el historial tras crear movilización
+        window._historialModuleRefresh = () => historial.loadList({ append: false });
 
         // Hook para que el form de equipos pueda refrescar la lista
         window._equiposModuleRefresh = () => {
@@ -116,7 +122,7 @@ const app = {
                 if (targetId === 'view-equipos')    equipos.renderList(document.getElementById('equiposSearch')?.value || '');
                 if (targetId === 'view-auxiliares') equipos.renderList(document.getElementById('equiposSearch')?.value || ''); // placeholder
                 if (targetId === 'view-sync')       this.renderSyncStatus();
-                if (targetId === 'view-historial')  historial.renderEquipoSelector();
+                if (targetId === 'view-historial')  historial.initView();
             });
         });
 
@@ -158,6 +164,14 @@ const app = {
             t.dataset.bound = '1';
             t.addEventListener('click', () => t.parentElement.classList.toggle('active'));
         });
+    },
+
+    bindMovilizacionButton() {
+        const btn = document.getElementById('btnNuevaMovilizacion');
+        if (btn && !btn.dataset.bound) {
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', () => movilizacionForm.open());
+        }
     },
 
     bindPasswordButton() {
