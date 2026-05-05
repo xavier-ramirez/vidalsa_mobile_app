@@ -1034,28 +1034,99 @@
     </div>
     <style> #movFormOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
 
-    <!-- MODALES BULK (selección masiva) -->
+    <!-- MODAL MOVILIZACIÓN MASIVA (rediseñado: estilo idéntico al de la web) -->
     <div id="bulkMovOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
         <div class="eqf-card">
-            <div class="eqf-head">
-                <h3>Movilizar masivo</h3>
+            <div class="eqf-head" style="background: linear-gradient(135deg, #00264d, #0067b1);">
+                <h3 style="display:flex; align-items:center; gap:8px;">
+                    <i class="material-icons">local_shipping</i> Movilización
+                </h3>
                 <button class="modal-close-btn" id="bulkMovClose" aria-label="Cerrar"><i class="material-icons">close</i></button>
             </div>
             <div class="eqf-body">
                 <div id="bulkMovError" class="eqf-error"></div>
-                <p id="bulkMovCount" style="color:#64748b; font-size:13px; margin:0 0 12px;"></p>
-                <div class="eqf-group">
-                    <label for="bulkMovDestino">Frente destino *</label>
-                    <select id="bulkMovDestino"></select>
+
+                <div class="bulk-mov-section-title">
+                    Equipos a movilizar — <span id="bulkMovCount">0 equipos</span>
                 </div>
+                <div id="bulkMovEquiposList" class="bulk-mov-equipos-list"></div>
+
+                <div class="bulk-mov-section-title" style="margin-top:18px;">
+                    <i class="material-icons" style="font-size:16px; color:#0067b1;">place</i>
+                    Frente de Destino *
+                </div>
+                <div class="bulk-mov-search-wrap">
+                    <i class="material-icons">search</i>
+                    <input type="text" id="bulkMovSearch" placeholder="Buscar frente de destino..." autocomplete="off" />
+                </div>
+                <div id="bulkMovDestList" class="bulk-mov-dest-list"></div>
+                <input type="hidden" id="bulkMovDestino" />
             </div>
             <div class="eqf-foot">
                 <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('bulkMovOverlay').classList.remove('open');">Cancelar</button>
-                <button type="button" class="eqf-btn eqf-btn-submit" id="bulkMovSubmit">Movilizar</button>
+                <button type="button" class="eqf-btn eqf-btn-submit" id="bulkMovSubmit">
+                    <i class="material-icons" style="font-size:18px; vertical-align:middle;">send</i>
+                    <span style="vertical-align:middle;">Movilizar</span>
+                </button>
             </div>
         </div>
     </div>
-    <style> #bulkMovOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
+    <style>
+        #bulkMovOverlay.open { display: flex !important; animation: fadeIn 0.2s; }
+        .bulk-mov-section-title {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; font-weight: 700; color: #475569;
+            text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
+        }
+        .bulk-mov-equipos-list {
+            display: flex; flex-direction: column; gap: 6px; max-height: 180px;
+            overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 10px; padding: 8px;
+        }
+        .bulk-mov-equipo-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 10px; background: white; border-radius: 8px;
+            border: 1px solid #e2e8f0; font-size: 13px;
+        }
+        .bulk-mov-equipo-num {
+            background: linear-gradient(135deg, #00264d, #0067b1); color: white;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 11px; flex-shrink: 0;
+        }
+        .bulk-mov-equipo-codigo { font-weight: 700; color: #0f172a; }
+        .bulk-mov-equipo-tipo   { color: #64748b; font-size: 12px; }
+        .bulk-mov-search-wrap {
+            position: relative; margin-bottom: 8px;
+        }
+        .bulk-mov-search-wrap input {
+            width: 100%; box-sizing: border-box;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid #cbd5e0; border-radius: 10px;
+            font-size: 14px; background: #f8fafc; outline: none; font-family: inherit;
+        }
+        .bulk-mov-search-wrap input:focus { border-color: #0067b1; background: white; }
+        .bulk-mov-search-wrap i {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            color: #94a3b8; font-size: 18px;
+        }
+        .bulk-mov-dest-list {
+            display: flex; flex-direction: column; gap: 4px; max-height: 200px;
+            overflow-y: auto; background: white; border: 1px solid #e2e8f0;
+            border-radius: 10px; padding: 4px;
+        }
+        .bulk-mov-dest-item {
+            padding: 10px 12px; cursor: pointer; border-radius: 8px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; color: #1e293b; transition: background 0.15s;
+        }
+        .bulk-mov-dest-item:hover { background: #f1f5f9; }
+        .bulk-mov-dest-item.selected {
+            background: #e0f2fe; color: #0067b1; font-weight: 700;
+        }
+        .bulk-mov-dest-item i { color: #94a3b8; font-size: 16px; }
+        .bulk-mov-dest-item.selected i { color: #0067b1; }
+    </style>
 
     <div id="bulkUbicOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
         <div class="eqf-card">

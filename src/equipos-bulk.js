@@ -51,13 +51,55 @@ export const equiposBulk = {
     /* ── BULK MOVILIZAR ── */
     async openMovilizar() {
         if (_selected.size === 0) return;
+        const all = sync.getEquiposLocal();
+        const seleccionados = all.filter(e => _selected.has(String(e.ID_EQUIPO)));
         const frentes = await loadFrentesIfNeeded();
-        const sel = document.getElementById('bulkMovDestino');
-        if (sel) {
-            sel.innerHTML = '<option value="">— Selecciona destino —</option>'
-                + frentes.map(f => `<option value="${f.ID_FRENTE}">${escapeHtml(f.NOMBRE_FRENTE)}</option>`).join('');
+
+        // 1. Lista de equipos a movilizar (mini cards numeradas)
+        const list = document.getElementById('bulkMovEquiposList');
+        if (list) {
+            list.innerHTML = seleccionados.map((eq, i) => `
+                <div class="bulk-mov-equipo-item">
+                    <div class="bulk-mov-equipo-num">${i + 1}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div class="bulk-mov-equipo-codigo">${escapeHtml(eq.CODIGO_PATIO || 'S/C')}</div>
+                        <div class="bulk-mov-equipo-tipo">${escapeHtml((eq.TIPO || '').toUpperCase())}</div>
+                    </div>
+                </div>
+            `).join('');
         }
-        document.getElementById('bulkMovCount').textContent = `${_selected.size} equipo(s) seleccionado(s)`;
+
+        const count = document.getElementById('bulkMovCount');
+        if (count) count.textContent = `${seleccionados.length} equipo${seleccionados.length === 1 ? '' : 's'}`;
+
+        // 2. Lista de frentes destino (con buscador)
+        const renderDestList = (filterText = '') => {
+            const filter = filterText.trim().toUpperCase();
+            const visibles = frentes.filter(f => !filter || (f.NOMBRE_FRENTE || '').toUpperCase().includes(filter));
+            const destList = document.getElementById('bulkMovDestList');
+            const hidden = document.getElementById('bulkMovDestino');
+            const selected = hidden?.value || '';
+            destList.innerHTML = visibles.map(f => `
+                <div class="bulk-mov-dest-item${String(f.ID_FRENTE) === selected ? ' selected' : ''}" data-id="${f.ID_FRENTE}">
+                    <i class="material-icons">place</i>
+                    <span>${escapeHtml(f.NOMBRE_FRENTE)}</span>
+                </div>
+            `).join('') || '<div style="padding:12px; text-align:center; color:#94a3b8; font-size:13px;">Sin coincidencias</div>';
+            destList.querySelectorAll('.bulk-mov-dest-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.getElementById('bulkMovDestino').value = item.getAttribute('data-id');
+                    destList.querySelectorAll('.bulk-mov-dest-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                });
+            });
+        };
+        renderDestList('');
+        const search = document.getElementById('bulkMovSearch');
+        if (search) {
+            search.value = '';
+            search.oninput = () => renderDestList(search.value);
+        }
+        document.getElementById('bulkMovDestino').value = '';
         document.getElementById('bulkMovError').style.display = 'none';
         document.getElementById('bulkMovOverlay').classList.add('open');
     },
