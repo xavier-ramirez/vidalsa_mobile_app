@@ -11,6 +11,7 @@ import { pdfViewer } from './pdf-viewer.js';
 import { equipoAcciones } from './equipo-acciones.js';
 import { movilizacionForm } from './movilizacion-form.js';
 import { equiposBulk } from './equipos-bulk.js';
+import { equiposUpload } from './equipos-upload.js';
 import { escapeHtml } from './util.js';
 
 const FILTER_IDS = ['filtroFrente','filtroTipo','filtroEstado','filtroCategoria','filtroAnio','filtroDocPropiedad','filtroDocPoliza','filtroDocRotc','filtroDocRacda'];
@@ -291,6 +292,17 @@ export const equipos = {
                     pdfViewer.openFromApi(`${label} – ${codigo}`, `/equipos/${data.ID_EQUIPO}/pdf/${tipo}`);
                 });
             });
+
+            // Bind botones SUBIR PDF (cuando el documento aún no está cargado)
+            body.querySelectorAll('.pdf-btn[data-upload-tipo]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tipo = btn.getAttribute('data-upload-tipo');
+                    equiposUpload.open(data.ID_EQUIPO, data.CODIGO_PATIO, tipo);
+                });
+            });
+
+            // Hook para que tras subir un PDF, el modal se reabra con datos frescos
+            window._equiposReopenDetail = (equipoId) => this.openDetailModal(equipoId);
         } catch (err) {
             body.innerHTML = `<div class="loading error">Error: ${escapeHtml(err.message)}</div>`;
         }
@@ -303,15 +315,23 @@ export const equipos = {
 
     renderDetailHTML(d) {
         const u = auth.getUser() || {};
-        const docRow = (label, valor, hasFile, tipo) => `
-            <div class="detalle-row">
-                <span class="detalle-label">${escapeHtml(label)}</span>
-                <span class="detalle-valor">
-                    <span>${escapeHtml(valor || '—')}</span>
-                    ${hasFile ? `<button type="button" class="pdf-btn" data-pdf-tipo="${tipo}" data-pdf-label="${escapeHtml(label)}" title="Ver PDF"><i class="material-icons">picture_as_pdf</i></button>` : ''}
-                </span>
-            </div>
-        `;
+        const docRow = (label, valor, hasFile, tipo) => {
+            // Si NO hay archivo y el usuario PUEDE editar, mostrar botón Subir.
+            const action = hasFile
+                ? `<button type="button" class="pdf-btn" data-pdf-tipo="${tipo}" data-pdf-label="${escapeHtml(label)}" title="Ver PDF"><i class="material-icons">picture_as_pdf</i></button>`
+                : (u.puede_editar
+                    ? `<button type="button" class="pdf-btn pdf-btn-upload" data-upload-tipo="${tipo}" title="Subir PDF"><i class="material-icons">cloud_upload</i></button>`
+                    : '');
+            return `
+                <div class="detalle-row">
+                    <span class="detalle-label">${escapeHtml(label)}</span>
+                    <span class="detalle-valor">
+                        <span>${escapeHtml(valor || '—')}</span>
+                        ${action}
+                    </span>
+                </div>
+            `;
+        };
 
         const infoRow = (label, valor) => `
             <div class="detalle-row">

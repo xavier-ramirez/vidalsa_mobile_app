@@ -12,6 +12,7 @@ import { historial } from './historial.js';
 import { movilizacionForm } from './movilizacion-form.js';
 import { equipoAcciones } from './equipo-acciones.js';
 import { equiposBulk } from './equipos-bulk.js';
+import { equiposUpload } from './equipos-upload.js';
 import { password } from './password.js';
 
 const app = {
@@ -41,6 +42,7 @@ const app = {
         movilizacionForm.bindControls();
         equipoAcciones.bindControls();
         equiposBulk.bindControls();
+        equiposUpload.bindControls();
         historial.bindControls();
         this.bindSyncButtons();
         this.bindCreateButton();

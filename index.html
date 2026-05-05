@@ -193,14 +193,14 @@
             background: linear-gradient(180deg, #eff6ff 0%, white 60%);
         }
 
-        /* Barra flotante de selección masiva */
+        /* Barra flotante de selección masiva — replica del .selection-floating-bar web */
         .selection-floating-bar {
             position: fixed; left: 50%; bottom: -100px; transform: translateX(-50%);
-            background: white; border-radius: 16px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
-            padding: 10px 14px; display: flex; align-items: center; gap: 8px;
-            border: 1px solid #e2e8f0;
-            z-index: 850; min-width: 280px; max-width: 96%;
+            background: linear-gradient(135deg, #0f172a, #1e293b); color: white;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.4);
+            padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+            z-index: 850; min-width: 320px; max-width: 96%;
             transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
             opacity: 0;
         }
@@ -208,24 +208,41 @@
             bottom: calc(20px + env(safe-area-inset-bottom)); opacity: 1;
         }
         .selection-count {
-            background: linear-gradient(135deg, #0067b1, #004481); color: white;
-            border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px;
-            display: inline-flex; align-items: center; gap: 4px;
+            display: inline-flex; align-items: center; gap: 8px;
+            color: white; font-weight: 800; font-size: 14px;
         }
-        .selection-count::before { content: '✓'; }
-        .selection-actions { display: flex; gap: 4px; flex: 1; justify-content: flex-end; }
-        .selection-actions button {
-            border: none; background: transparent; cursor: pointer;
-            width: 38px; height: 38px; border-radius: 8px;
-            display: inline-flex; align-items: center; justify-content: center;
-            transition: background 0.15s;
+        .selection-count-icon {
+            background: rgba(255,255,255,0.1); padding: 5px; border-radius: 50%;
+            display: flex;
         }
-        .selection-actions button:hover { background: #f1f5f9; }
-        .selection-actions button i { font-size: 22px; color: #475569; }
-        .selection-actions .selection-clear i { color: #dc2626; }
-        .selection-actions .selection-mov i  { color: #0067b1; }
-        .selection-actions .selection-ubic i { color: #f59e0b; }
-        .selection-actions .selection-anch i { color: #16a34a; }
+        .selection-count-icon i { font-size: 18px; color: white; }
+        .selection-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.2); }
+        .selection-actions { display: flex; gap: 8px; flex: 1; justify-content: flex-end; }
+        .btn-bulk-clear {
+            border: none; background: transparent; color: #94a3b8; cursor: pointer;
+            font-weight: 700; font-size: 13px; font-family: inherit;
+            padding: 6px 10px; border-radius: 8px; transition: color 0.15s;
+        }
+        .btn-bulk-clear:hover { color: white; }
+        .btn-bulk-action {
+            border: none; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 12px; border-radius: 8px;
+            color: white; font-weight: 700; font-size: 12px; font-family: inherit;
+            transition: transform 0.1s;
+        }
+        .btn-bulk-action:hover  { transform: translateY(-1px); }
+        .btn-bulk-action:active { transform: translateY(0); }
+        .btn-bulk-action i { font-size: 18px; }
+        /* Colores específicos por acción (alineados con la web) */
+        .btn-bulk-action.action-anclar    { background: #10b981; }
+        .btn-bulk-action.action-desanclar { background: #ef4444; }
+        .btn-bulk-action.action-ubicacion { background: #64748b; }
+        .btn-bulk-action.action-asignar   { background: linear-gradient(135deg, #0067b1, #004481); }
+
+        /* Botón subir PDF (estado: documento ausente) */
+        .pdf-btn.pdf-btn-upload { background: #dcfce7; color: #16a34a; }
+        .pdf-btn.pdf-btn-upload:hover { background: #bbf7d0; }
 
         /* Toast notifications (replica del .toast-container web) */
         .toast-container {
@@ -805,21 +822,23 @@
                     <i class="material-icons">add</i>
                 </button>
 
-                <!-- Barra flotante de selección masiva -->
+                <!-- Barra flotante de selección masiva (mismo diseño que web) -->
                 <div id="eqSelectionBar" class="selection-floating-bar">
-                    <span class="selection-count"><span id="eqSelectionCount">0</span></span>
+                    <div class="selection-count">
+                        <div class="selection-count-icon"><i class="material-icons">functions</i></div>
+                        <span id="eqSelectionCount">0</span>
+                    </div>
+                    <div class="selection-divider"></div>
                     <div class="selection-actions">
-                        <button type="button" id="btnBulkMovilizar" class="selection-mov" title="Movilizar masivo">
+                        <button type="button" id="btnBulkClear" class="btn-bulk-clear">Limpiar</button>
+                        <button type="button" id="btnBulkAnclaje" class="btn-bulk-action action-anclar" title="Anclar">
+                            <i class="material-icons">anchor</i>
+                        </button>
+                        <button type="button" id="btnBulkUbicacion" class="btn-bulk-action action-ubicacion" title="Ubicación">
+                            <i class="material-icons">pin_drop</i>
+                        </button>
+                        <button type="button" id="btnBulkMovilizar" class="btn-bulk-action action-asignar" title="Asignar / Movilizar">
                             <i class="material-icons">local_shipping</i>
-                        </button>
-                        <button type="button" id="btnBulkUbicacion" class="selection-ubic" title="Actualizar ubicación">
-                            <i class="material-icons">edit_location</i>
-                        </button>
-                        <button type="button" id="btnBulkAnclaje" class="selection-anch" title="Anclar / desanclar">
-                            <i class="material-icons">link</i>
-                        </button>
-                        <button type="button" id="btnBulkClear" class="selection-clear" title="Limpiar selección">
-                            <i class="material-icons">close</i>
                         </button>
                     </div>
                 </div>
@@ -1055,6 +1074,32 @@
         </div>
     </div>
     <style> #bulkAnchorOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
+
+    <!-- MODAL SUBIR PDF (Documentos legales) -->
+    <div id="uploadDocOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
+        <div class="eqf-card">
+            <div class="eqf-head">
+                <h3 id="uploadDocLabel">Subir documento</h3>
+                <button class="modal-close-btn" id="uploadDocClose" aria-label="Cerrar"><i class="material-icons">close</i></button>
+            </div>
+            <div class="eqf-body">
+                <div id="uploadDocError" class="eqf-error"></div>
+                <div class="eqf-group">
+                    <label for="uploadDocFile">Archivo PDF *</label>
+                    <input type="file" id="uploadDocFile" accept="application/pdf" />
+                </div>
+                <div class="eqf-group" id="uploadDocFechaWrap">
+                    <label for="uploadDocFecha">Fecha de vencimiento *</label>
+                    <input type="date" id="uploadDocFecha" />
+                </div>
+            </div>
+            <div class="eqf-foot">
+                <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('uploadDocOverlay').classList.remove('open');">Cancelar</button>
+                <button type="button" class="eqf-btn eqf-btn-submit" id="uploadDocSubmit">Subir documento</button>
+            </div>
+        </div>
+    </div>
+    <style> #uploadDocOverlay.open { display: flex !important; animation: fadeIn 0.2s; } </style>
 
     <!-- MODAL CAMBIAR ESTADO OPERATIVO -->
     <div id="estadoOverlay" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9100; align-items:flex-end; justify-content:center;">
