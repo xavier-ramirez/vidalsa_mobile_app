@@ -152,10 +152,11 @@ const app = {
     },
 
     bindMenuGroups() {
+        // El CSS web (/css/menu.css) usa .mobile-nav-group.active para expandir.
         document.querySelectorAll('.mobile-nav-group-title').forEach(t => {
             if (t.dataset.bound) return;
             t.dataset.bound = '1';
-            t.addEventListener('click', () => t.parentElement.classList.toggle('open'));
+            t.addEventListener('click', () => t.parentElement.classList.toggle('active'));
         });
     },
 

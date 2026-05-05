@@ -85,22 +85,11 @@
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .muhc-role { font-size: 11px; color: #64748b; }
 
-        .mobile-nav-group { border-bottom: 1px solid #f1f5f9; }
-        .mobile-nav-group-title {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 16px; cursor: pointer; user-select: none;
-            font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .mobile-nav-group-title i.material-icons { color: #0067b1; font-size: 18px; }
-        .mobile-nav-group-title .chevron { transition: transform 0.2s; color: #94a3b8; }
-        .mobile-nav-group.open .mobile-nav-group-title .chevron { transform: rotate(180deg); }
-        .mobile-nav-group-content { display: none; background: #fafbfc; }
-        .mobile-nav-group.open .mobile-nav-group-content { display: block; }
-        .mobile-nav-group-content .mobile-nav-link { padding-left: 36px; font-size: 13px; }
-
-        .mobile-nav-separator { height: 1px; background: #e2e8f0; margin: 6px 0; }
-        .mobile-logout { color: #dc2626 !important; font-weight: 700; }
+        /* Sub-links indentados dentro de los grupos colapsables.
+           El resto de reglas (.mobile-nav-group, .mobile-nav-group-title,
+           .mobile-nav-group.active, .mobile-nav-link, .mobile-nav-separator,
+           .mobile-logout) las provee /css/menu.css de la web. */
+        .mobile-nav-group-content .mobile-nav-link { padding-left: 36px; font-size: 14px; }
 
         .view-container { display: none; padding: 15px; }
         .view-container.active { display: block; animation: fadeIn 0.3s; }
@@ -409,8 +398,8 @@
                 </div>
             </div>
 
-            <!-- Grupo Flota (colapsable) -->
-            <div class="mobile-nav-group open" id="grpFlota">
+            <!-- Grupo Flota (colapsable, abierto por defecto) -->
+            <div class="mobile-nav-group active" id="grpFlota">
                 <div class="mobile-nav-group-title">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <i class="material-icons">agriculture</i> Flota
