@@ -9,21 +9,107 @@ import { equiposForm } from './equipos-form.js';
 import { pdfViewer } from './pdf-viewer.js';
 import { escapeHtml } from './util.js';
 
+const FILTER_IDS = ['filtroFrente','filtroTipo','filtroEstado','filtroCategoria','filtroAnio','filtroDocPropiedad','filtroDocPoliza','filtroDocRotc','filtroDocRacda'];
+
+function getActiveFilters() {
+    const get = id => (document.getElementById(id)?.value || '').trim();
+    return {
+        frente:    get('filtroFrente'),
+        tipo:      get('filtroTipo'),
+        estado:    get('filtroEstado'),
+        categoria: get('filtroCategoria'),
+        anio:      get('filtroAnio'),
+        docPropiedad: get('filtroDocPropiedad'),
+        docPoliza:    get('filtroDocPoliza'),
+        docRotc:      get('filtroDocRotc'),
+        docRacda:     get('filtroDocRacda'),
+    };
+}
+
+function applyFilters(list, filters, searchText) {
+    const search = (searchText || '').trim().toUpperCase();
+    return list.filter(e => {
+        if (filters.frente    && String(e.ID_FRENTE_ACTUAL || '') !== filters.frente) return false;
+        if (filters.tipo      && (e.TIPO || '') !== filters.tipo) return false;
+        if (filters.estado    && (e.ESTADO_OPERATIVO || '') !== filters.estado) return false;
+        if (filters.categoria && (e.CATEGORIA_FLOTA  || '') !== filters.categoria) return false;
+        if (filters.anio      && String(e.ANIO || '') !== filters.anio) return false;
+        if (filters.docPropiedad === '1' && !e.docs?.propiedad?.has_file) return false;
+        if (filters.docPropiedad === '0' &&  e.docs?.propiedad?.has_file) return false;
+        if (filters.docPoliza    === '1' && !e.docs?.poliza?.has_file)    return false;
+        if (filters.docPoliza    === '0' &&  e.docs?.poliza?.has_file)    return false;
+        if (filters.docRotc      === '1' && !e.docs?.rotc?.has_file)      return false;
+        if (filters.docRotc      === '0' &&  e.docs?.rotc?.has_file)      return false;
+        if (filters.docRacda     === '1' && !e.docs?.racda?.has_file)     return false;
+        if (filters.docRacda     === '0' &&  e.docs?.racda?.has_file)     return false;
+        if (search) {
+            const haystack = [e.CODIGO_PATIO, e.MARCA, e.MODELO, e.SERIAL_CHASIS, e.PLACA, e.FRENTE_ACTUAL]
+                .filter(Boolean).join(' ').toUpperCase();
+            if (!haystack.includes(search)) return false;
+        }
+        return true;
+    });
+}
+
 export const equipos = {
+    /** Pobla los selects de filtros con valores únicos del cache local. */
+    populateFilterSelects() {
+        const all = sync.getEquiposLocal();
+        const uniqVals = (key) => [...new Set(all.map(e => e[key]).filter(v => v !== null && v !== undefined && v !== ''))].sort();
+        const setOpts = (id, vals, label) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const current = el.value;
+            el.innerHTML = `<option value="">— ${label} —</option>` +
+                vals.map(v => `<option value="${escapeHtml(String(v))}">${escapeHtml(String(v))}</option>`).join('');
+            if (current && vals.map(String).includes(current)) el.value = current;
+        };
+        // Frentes: usa pares ID/Nombre
+        const frentesMap = {};
+        all.forEach(e => {
+            if (e.ID_FRENTE_ACTUAL) frentesMap[e.ID_FRENTE_ACTUAL] = e.FRENTE_ACTUAL || ('#' + e.ID_FRENTE_ACTUAL);
+        });
+        const frenteSel = document.getElementById('filtroFrente');
+        if (frenteSel) {
+            const cur = frenteSel.value;
+            frenteSel.innerHTML = '<option value="">— Todos los frentes —</option>'
+                + Object.entries(frentesMap).sort((a,b) => a[1].localeCompare(b[1]))
+                    .map(([id, nom]) => `<option value="${id}">${escapeHtml(nom)}</option>`).join('');
+            if (cur) frenteSel.value = cur;
+        }
+        setOpts('filtroTipo',      uniqVals('TIPO'),            'Todos los tipos');
+        setOpts('filtroEstado',    uniqVals('ESTADO_OPERATIVO'),'Todos los estados');
+        setOpts('filtroCategoria', uniqVals('CATEGORIA_FLOTA'), 'Todas las categorías');
+        setOpts('filtroAnio',      uniqVals('ANIO').reverse(),  'Todos los años');
+    },
+
+    /** Renderiza KPIs (Total / Operativos / Inoperativos / Mantenimiento / Desincorporados). */
+    renderKPIs(visibleList = null) {
+        const list = visibleList || sync.getEquiposLocal();
+        const counts = { total: list.length, op: 0, ino: 0, mant: 0, des: 0 };
+        list.forEach(e => {
+            const s = (e.ESTADO_OPERATIVO || '').toUpperCase();
+            if (s === 'OPERATIVO')        counts.op++;
+            else if (s === 'INOPERATIVO') counts.ino++;
+            else if (s.includes('MANTEN')) counts.mant++;
+            else if (s === 'DESINCORPORADO') counts.des++;
+        });
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v); };
+        set('kpiTotal', counts.total);
+        set('kpiOperativos', counts.op);
+        set('kpiInoperativos', counts.ino);
+        set('kpiMantenimiento', counts.mant);
+        set('kpiDesincorporados', counts.des);
+    },
+
     /** Renderiza la lista de equipos (cards) en el contenedor #equiposListContainer. */
     renderList(filterText = '') {
         const container = document.getElementById('equiposListContainer');
         if (!container) return;
-
         const all = sync.getEquiposLocal();
-        const filter = filterText.trim().toUpperCase();
-        const list = filter
-            ? all.filter(e => {
-                const haystack = [e.CODIGO_PATIO, e.MARCA, e.MODELO, e.SERIAL_CHASIS, e.PLACA, e.FRENTE_ACTUAL]
-                    .filter(Boolean).join(' ').toUpperCase();
-                return haystack.includes(filter);
-            })
-            : all;
+        const filters = getActiveFilters();
+        const list = applyFilters(all, filters, filterText);
+        this.renderKPIs(list);
 
         if (all.length === 0) {
             container.innerHTML = `
@@ -77,9 +163,36 @@ export const equipos = {
 
     bindSearch() {
         const input = document.getElementById('equiposSearch');
-        if (!input || input.dataset.bound) return;
-        input.dataset.bound = '1';
-        input.addEventListener('input', () => this.renderList(input.value));
+        if (input && !input.dataset.bound) {
+            input.dataset.bound = '1';
+            input.addEventListener('input', () => this.renderList(input.value));
+        }
+        // Toggle del panel de filtros
+        const toggleBtn = document.getElementById('equiposFiltrosToggle');
+        if (toggleBtn && !toggleBtn.dataset.bound) {
+            toggleBtn.dataset.bound = '1';
+            toggleBtn.addEventListener('click', () => {
+                document.getElementById('equiposFiltrosPanel')?.classList.toggle('open');
+            });
+        }
+        // Cualquier change en filtros → re-render
+        FILTER_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el.dataset.bound) {
+                el.dataset.bound = '1';
+                el.addEventListener('change', () => this.renderList(input?.value || ''));
+            }
+        });
+        // Botón "Limpiar filtros"
+        const clearBtn = document.getElementById('equiposFiltrosClear');
+        if (clearBtn && !clearBtn.dataset.bound) {
+            clearBtn.dataset.bound = '1';
+            clearBtn.addEventListener('click', () => {
+                FILTER_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+                if (input) input.value = '';
+                this.renderList('');
+            });
+        }
     },
 
     async openDetailModal(id) {

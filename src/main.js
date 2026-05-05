@@ -53,6 +53,7 @@ const app = {
         if (sync.isSyncRequired() && navigator.onLine) {
             await this.runSync({ silent: true });
         }
+        equipos.populateFilterSelects();
         equipos.renderList('');
         this.renderSyncStatus();
     },
@@ -119,7 +120,7 @@ const app = {
                 const target = document.getElementById(targetId);
                 if (target) target.classList.add('active');
                 menu.classList.remove('active');
-                if (targetId === 'view-equipos')    equipos.renderList(document.getElementById('equiposSearch')?.value || '');
+                if (targetId === 'view-equipos')    { equipos.populateFilterSelects(); equipos.renderList(document.getElementById('equiposSearch')?.value || ''); }
                 if (targetId === 'view-auxiliares') equipos.renderList(document.getElementById('equiposSearch')?.value || ''); // placeholder
                 if (targetId === 'view-sync')       this.renderSyncStatus();
                 if (targetId === 'view-historial')  historial.initView();
