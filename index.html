@@ -219,11 +219,11 @@
         .selection-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.2); }
         .selection-actions { display: flex; gap: 8px; flex: 1; justify-content: flex-end; }
         .btn-bulk-clear {
-            border: none; background: transparent; color: #94a3b8; cursor: pointer;
+            border: none; background: transparent; color: white; cursor: pointer;
             font-weight: 700; font-size: 13px; font-family: inherit;
-            padding: 6px 10px; border-radius: 8px; transition: color 0.15s;
+            padding: 6px 10px; border-radius: 8px; transition: opacity 0.15s;
         }
-        .btn-bulk-clear:hover { color: white; }
+        .btn-bulk-clear:hover { opacity: 0.8; }
         .btn-bulk-action {
             border: none; cursor: pointer;
             display: inline-flex; align-items: center; gap: 6px;
@@ -353,11 +353,23 @@
         }
         .modal-head .modal-title { font-size: 20px; font-weight: 900; letter-spacing: 0.05em; margin: 0; }
         .modal-head .modal-sub   { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 4px; }
-        .modal-close-btn {
+        .modal-close-btn, .modal-icon-btn {
             background: rgba(255,255,255,0.15); border: none; color: white;
             width: 32px; height: 32px; border-radius: 50%; cursor: pointer; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
         }
+        .modal-close-btn:hover, .modal-icon-btn:hover { background: rgba(255,255,255,0.25); }
+        .modal-icon-btn i { font-size: 17px; }
+        .btn-modal-gps {
+            background: linear-gradient(135deg, #10b981, #059669); color: white;
+            border: none; cursor: pointer; padding: 6px 14px; border-radius: 8px;
+            font-size: 11px; font-weight: 700; display: inline-flex; align-items: center;
+            gap: 5px; box-shadow: 0 2px 8px rgba(16,185,129,0.35);
+            font-family: inherit; letter-spacing: 0.04em;
+        }
+        .btn-modal-gps i { font-size: 15px; }
+        .btn-modal-gps:hover { transform: scale(1.04); box-shadow: 0 4px 14px rgba(16,185,129,0.5); }
         .modal-body { overflow-y: auto; padding: 12px 16px 24px; }
         .loading { text-align: center; padding: 40px 20px; color: #64748b; font-size: 14px; }
         .loading.error { color: #b91c1c; }
@@ -831,8 +843,11 @@
                     <div class="selection-divider"></div>
                     <div class="selection-actions">
                         <button type="button" id="btnBulkClear" class="btn-bulk-clear">Limpiar</button>
-                        <button type="button" id="btnBulkAnclaje" class="btn-bulk-action action-anclar" title="Anclar">
+                        <button type="button" id="btnBulkAnclar" class="btn-bulk-action action-anclar" title="Anclar">
                             <i class="material-icons">anchor</i>
+                        </button>
+                        <button type="button" id="btnBulkDesanclar" class="btn-bulk-action action-desanclar" title="Desanclar">
+                            <i class="material-icons">link_off</i>
                         </button>
                         <button type="button" id="btnBulkUbicacion" class="btn-bulk-action action-ubicacion" title="Ubicación">
                             <i class="material-icons">pin_drop</i>
@@ -942,17 +957,28 @@
         </main>
     </div>
 
-    <!-- MODAL CASILLERO -->
+    <!-- MODAL CASILLERO (estructura idéntica a equipment_details_modal de la web) -->
     <div id="equipoModal" class="modal-overlay" role="dialog" aria-modal="true">
         <div class="modal-card">
             <div class="modal-head">
-                <div>
-                    <h3 class="modal-title">CASILLERO</h3>
+                <div style="flex: 1; min-width: 0;">
+                    <h3 class="modal-title" id="equipoModalTitle">Equipo</h3>
                     <div class="modal-sub" id="equipoModalSub"></div>
+                    <div class="modal-head-extra" id="equipoModalExtra" style="display:none; margin-top:8px;">
+                        <button type="button" class="btn-modal-gps" id="btnGpsEnVivo">
+                            <i class="material-icons">gps_fixed</i>
+                            <span>VER GPS EN VIVO</span>
+                        </button>
+                    </div>
                 </div>
-                <button class="modal-close-btn" id="equipoModalClose" aria-label="Cerrar">
-                    <i class="material-icons">close</i>
-                </button>
+                <div style="display:flex; gap:6px; flex-shrink:0;">
+                    <button class="modal-icon-btn" id="equipoModalEditPencil" title="Editar datos" style="display:none;">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="modal-close-btn" id="equipoModalClose" aria-label="Cerrar">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
             </div>
             <div class="modal-body" id="equipoModalBody"></div>
         </div>
@@ -1068,7 +1094,7 @@
                 </div>
             </div>
             <div class="eqf-foot">
-                <button type="button" class="eqf-btn eqf-btn-cancel" id="bulkAnchorUnanchor" style="background:#fee2e2; border-color:#fecaca; color:#b91c1c;">Desanclar</button>
+                <button type="button" class="eqf-btn eqf-btn-cancel" onclick="document.getElementById('bulkAnchorOverlay').classList.remove('open');">Cancelar</button>
                 <button type="button" class="eqf-btn eqf-btn-submit" id="bulkAnchorSubmit">Anclar</button>
             </div>
         </div>

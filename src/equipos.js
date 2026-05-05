@@ -224,13 +224,15 @@ export const equipos = {
     async openDetailModal(id) {
         const overlay = document.getElementById('equipoModal');
         const body = document.getElementById('equipoModalBody');
+        const title = document.getElementById('equipoModalTitle');
         const titleSub = document.getElementById('equipoModalSub');
         if (!overlay || !body) return;
 
         // Datos básicos desde cache local (instantáneo)
         const local = sync.getEquipoLocal(id);
         if (local) {
-            titleSub.textContent = `Placa: ${local.PLACA || 'S/P'} · Serial: ${local.SERIAL_CHASIS || 'S/S'}`;
+            if (title) title.textContent = (local.TIPO || 'Equipo').toUpperCase();
+            if (titleSub) titleSub.textContent = `Serial: ${local.SERIAL_CHASIS || 'S/S'}`;
         }
 
         body.innerHTML = '<div class="loading">Cargando detalles…</div>';
@@ -248,7 +250,30 @@ export const equipos = {
                 return;
             }
 
-            titleSub.textContent = `Placa: ${data.PLACA || 'S/P'} · Serial: ${data.SERIAL_CHASIS || 'S/S'}`;
+            if (title) title.textContent = (data.TIPO || 'Equipo').toUpperCase();
+            if (titleSub) titleSub.textContent = `Serial: ${data.SERIAL_CHASIS || 'S/S'}`;
+
+            // Botón VER GPS EN VIVO (visible solo si hay LINK_GPS)
+            const extra = document.getElementById('equipoModalExtra');
+            const gpsBtn = document.getElementById('btnGpsEnVivo');
+            if (data.LINK_GPS && extra && gpsBtn) {
+                extra.style.display = '';
+                gpsBtn.onclick = () => window.open(data.LINK_GPS, '_blank');
+            } else if (extra) {
+                extra.style.display = 'none';
+            }
+
+            // Lápiz editar arriba derecha (solo si tiene permiso)
+            const u = auth.getUser() || {};
+            const editPencil = document.getElementById('equipoModalEditPencil');
+            if (editPencil) {
+                editPencil.style.display = u.puede_editar ? 'flex' : 'none';
+                editPencil.onclick = () => {
+                    this.closeDetailModal();
+                    equiposForm.openEdit(data.ID_EQUIPO);
+                };
+            }
+
             body.innerHTML = this.renderDetailHTML(data);
 
             // Bind acordeones
@@ -259,12 +284,7 @@ export const equipos = {
             // Set context para las acciones (movilizar/estado/falla)
             equipoAcciones.setContext({ ID_EQUIPO: data.ID_EQUIPO, CODIGO_PATIO: data.CODIGO_PATIO, ID_FRENTE_ACTUAL: data.ID_FRENTE_ACTUAL });
 
-            // Bind botones de acción del modal
-            const editBtn = body.querySelector('#btnEditEquipoFromModal');
-            if (editBtn) editBtn.addEventListener('click', () => {
-                this.closeDetailModal();
-                equiposForm.openEdit(editBtn.getAttribute('data-equipo-id'));
-            });
+            // Bind botones de acción del modal (Editar ahora vive en el lápiz del header)
             const movBtn = body.querySelector('#btnMovilizarFromModal');
             if (movBtn) movBtn.addEventListener('click', () => {
                 this.closeDetailModal();
@@ -357,10 +377,6 @@ export const equipos = {
             </div>
 
             <div class="modal-actions">
-                ${u.puede_editar ? `
-                    <button type="button" class="modal-action-btn" id="btnEditEquipoFromModal" data-equipo-id="${d.ID_EQUIPO}" title="Editar datos">
-                        <i class="material-icons">edit</i> Editar
-                    </button>` : ''}
                 ${u.puede_movilizar ? `
                     <button type="button" class="modal-action-btn" id="btnMovilizarFromModal" title="Movilizar">
                         <i class="material-icons">local_shipping</i> Movilizar

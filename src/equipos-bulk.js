@@ -136,13 +136,12 @@ export const equiposBulk = {
         }
     },
 
-    /* ── BULK ANCLAJE ── */
-    openAnclaje() {
+    /* ── BULK ANCLAR ── (botón verde abre modal con select host) */
+    openAnclar() {
         if (_selected.size === 0) return;
         const all = sync.getEquiposLocal();
         const sel = document.getElementById('bulkAnchorHost');
         if (sel) {
-            // Solo equipos NO seleccionados pueden ser host
             sel.innerHTML = '<option value="">— Selecciona host —</option>'
                 + all.filter(e => !_selected.has(String(e.ID_EQUIPO)))
                     .map(e => `<option value="${e.ID_EQUIPO}">${escapeHtml(e.CODIGO_PATIO || 'S/C')} — ${escapeHtml(e.MARCA || '')} ${escapeHtml(e.MODELO || '')}</option>`).join('');
@@ -152,31 +151,42 @@ export const equiposBulk = {
         document.getElementById('bulkAnchorOverlay').classList.add('open');
     },
 
-    async submitAnclaje(unanchor = false) {
+    /* ── BULK DESANCLAR ── (botón rojo, confirma y ejecuta directamente) */
+    async desanclar() {
+        if (_selected.size === 0) return;
+        if (!navigator.onLine) { window.showToast?.('Necesitas conexión.', 'error'); return; }
+        if (!confirm(`¿Desanclar ${_selected.size} equipo(s) seleccionado(s)?`)) return;
+        try {
+            const data = await api.post('/equipos/bulk-unanchor', { ids: this.selectedIds() });
+            try { await sync.syncMisEquipos(); } catch {}
+            this.clearAll();
+            if (window._equiposModuleRefresh) window._equiposModuleRefresh();
+            window.showToast?.(data.message || 'Equipos desanclados.', 'success');
+        } catch (e) {
+            window.showToast?.(e.message, 'error');
+        }
+    },
+
+    async submitAnclar() {
         const hostId = document.getElementById('bulkAnchorHost').value;
         const err = document.getElementById('bulkAnchorError');
         const btn = document.getElementById('bulkAnchorSubmit');
-        const btnUn = document.getElementById('bulkAnchorUnanchor');
         err.style.display = 'none';
-        if (!unanchor && !hostId) { err.textContent = 'Selecciona un equipo host.'; err.style.display = 'flex'; return; }
+        if (!hostId) { err.textContent = 'Selecciona un equipo host.'; err.style.display = 'flex'; return; }
         if (!navigator.onLine) { err.textContent = 'Necesitas conexión.'; err.style.display = 'flex'; return; }
-        if (btn) btn.disabled = true;
-        if (btnUn) btnUn.disabled = true;
+        btn.disabled = true;
         try {
-            const url = unanchor ? '/equipos/bulk-unanchor' : '/equipos/bulk-anchor';
-            const body = unanchor ? { ids: this.selectedIds() } : { ids: this.selectedIds(), id_anclaje: hostId };
-            const data = await api.post(url, body);
+            const data = await api.post('/equipos/bulk-anchor', { ids: this.selectedIds(), id_anclaje: hostId });
             try { await sync.syncMisEquipos(); } catch {}
             this.clearAll();
             document.getElementById('bulkAnchorOverlay').classList.remove('open');
             if (window._equiposModuleRefresh) window._equiposModuleRefresh();
-            window.showToast?.(data.message || 'Operación completada.', 'success');
+            window.showToast?.(data.message || 'Equipos anclados.', 'success');
         } catch (e) {
             err.innerHTML = `<i class="material-icons" style="font-size:18px;">error_outline</i> <span>${escapeHtml(e.message)}</span>`;
             err.style.display = 'flex';
         } finally {
-            if (btn) btn.disabled = false;
-            if (btnUn) btnUn.disabled = false;
+            btn.disabled = false;
         }
     },
 
@@ -186,17 +196,17 @@ export const equiposBulk = {
             const el = document.getElementById(id);
             if (el && !el.dataset.bound) { el.dataset.bound = '1'; el.addEventListener('click', fn); }
         };
-        btn('btnBulkMovilizar', () => this.openMovilizar());
-        btn('btnBulkUbicacion', () => this.openUbicacion());
-        btn('btnBulkAnclaje',   () => this.openAnclaje());
-        btn('btnBulkClear',     () => this.clearAll());
-        btn('bulkMovClose',     () => document.getElementById('bulkMovOverlay').classList.remove('open'));
-        btn('bulkMovSubmit',    () => this.submitMovilizar());
-        btn('bulkUbicClose',    () => document.getElementById('bulkUbicOverlay').classList.remove('open'));
-        btn('bulkUbicSubmit',   () => this.submitUbicacion());
-        btn('bulkAnchorClose',  () => document.getElementById('bulkAnchorOverlay').classList.remove('open'));
-        btn('bulkAnchorSubmit', () => this.submitAnclaje(false));
-        btn('bulkAnchorUnanchor', () => this.submitAnclaje(true));
+        btn('btnBulkMovilizar',  () => this.openMovilizar());
+        btn('btnBulkUbicacion',  () => this.openUbicacion());
+        btn('btnBulkAnclar',     () => this.openAnclar());
+        btn('btnBulkDesanclar',  () => this.desanclar());
+        btn('btnBulkClear',      () => this.clearAll());
+        btn('bulkMovClose',      () => document.getElementById('bulkMovOverlay').classList.remove('open'));
+        btn('bulkMovSubmit',     () => this.submitMovilizar());
+        btn('bulkUbicClose',     () => document.getElementById('bulkUbicOverlay').classList.remove('open'));
+        btn('bulkUbicSubmit',    () => this.submitUbicacion());
+        btn('bulkAnchorClose',   () => document.getElementById('bulkAnchorOverlay').classList.remove('open'));
+        btn('bulkAnchorSubmit',  () => this.submitAnclar());
 
         // Cerrar overlays clickeando el fondo
         ['bulkMovOverlay','bulkUbicOverlay','bulkAnchorOverlay'].forEach(id => {
@@ -207,13 +217,17 @@ export const equiposBulk = {
             }
         });
 
-        // Ocultar botones según permisos
-        const movBtn = document.getElementById('btnBulkMovilizar');
+        // Ocultar botones según permisos (mismo patrón que la web)
+        const movBtn  = document.getElementById('btnBulkMovilizar');
         if (movBtn && !u.puede_movilizar) movBtn.style.display = 'none';
         const ubicBtn = document.getElementById('btnBulkUbicacion');
         if (ubicBtn && !u.puede_estado) ubicBtn.style.display = 'none';
-        const ancBtn = document.getElementById('btnBulkAnclaje');
-        if (ancBtn && !u.puede_estado) ancBtn.style.display = 'none';
+        const anclar    = document.getElementById('btnBulkAnclar');
+        const desanclar = document.getElementById('btnBulkDesanclar');
+        if (anclar && !u.puede_estado)    anclar.style.display = 'none';
+        if (desanclar && !u.puede_estado) desanclar.style.display = 'none';
+        // Por defecto Desanclar oculto, se muestra solo si seleccionas equipos anclados
+        // (placeholder: lógica de detección automática puede agregarse en próxima fase).
     },
 
     /** Para que el menú "Acciones" llame al delete. */
