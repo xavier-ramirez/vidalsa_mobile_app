@@ -148,15 +148,18 @@ export const equipos = {
                             <span><i class="material-icons">place</i> ${escapeHtml(eq.FRENTE_ACTUAL || 'Sin frente')}</span>
                         </div>
                     </div>
+                    <button type="button" class="equipo-card-eye" data-eye-id="${eq.ID_EQUIPO}" title="Ver detalles" aria-label="Ver detalles">
+                        <i class="material-icons">visibility</i>
+                    </button>
                 </div>
             `;
         }).join('');
 
-        // Bind clicks
-        container.querySelectorAll('.equipo-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const id = card.getAttribute('data-id');
-                this.openDetailModal(id);
+        // Bind: solo el ícono de OJO abre el modal (mismo patrón que la web).
+        container.querySelectorAll('.equipo-card-eye').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openDetailModal(btn.getAttribute('data-eye-id'));
             });
         });
     },

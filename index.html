@@ -171,9 +171,21 @@
         .equipos-list { display: flex; flex-direction: column; gap: 10px; }
         .equipo-card {
             background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04); cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+            padding-right: 50px; /* Espacio para el botón ojo */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: box-shadow 0.15s;
+            position: relative;
         }
-        .equipo-card:active { transform: scale(0.98); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .equipo-card-eye {
+            position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
+            border: none; cursor: pointer;
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #e0f2fe; color: #0067b1;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .equipo-card-eye:hover  { background: #bae6fd; }
+        .equipo-card-eye:active { transform: translateY(-50%) scale(0.92); }
+        .equipo-card-eye i { font-size: 20px; }
         .equipo-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .equipo-codigo { font-weight: 800; color: #0f172a; font-size: 15px; }
         .badge-status { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 800; letter-spacing: 0.04em; }
