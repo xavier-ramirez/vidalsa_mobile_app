@@ -21,8 +21,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.vidalsa.mobile",
-      "usesCleartextTraffic": true
+      "package": "com.vidalsa.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"

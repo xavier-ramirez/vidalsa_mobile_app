@@ -482,8 +482,11 @@ async function api(method, path, body = null) {
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(`${apiBase}${path}`, opts);
   const data = await res.json().catch(() => ({}));
-  if (!res.ok)
-    throw new Error(data.error || data.message || `Error ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(data.error || data.message || `Error ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 
@@ -3596,9 +3599,19 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
       );
       return;
     }
+    // Token sentinela del modo "Entrar sin conexión": Sanctum lo rechaza con
+    // 401, así que abortamos antes con mensaje útil en vez de marcar "sin red".
+    const token = await AsyncStorage.getItem("token");
+    if (!token || token === "offline_token") {
+      showModernAlert(
+        "Inicia sesión",
+        "Estás en modo sin conexión. Cierra sesión y vuelve a entrar con tu correo y contraseña para sincronizar.",
+      );
+      return;
+    }
     setSincronizando(true);
     let exitosos = 0;
-    let fallidos = 0;
+    const errores = []; // { id, motivo }
     try {
       for (const p of pendientes) {
         try {
@@ -3609,7 +3622,10 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
               ID_FRENTE_DESTINO: p.id_frente_dest,
             });
           } else {
-            const ids = p.ids_equipos.split(",").map(Number).filter(Boolean);
+            const ids = (p.ids_equipos || "")
+              .split(",")
+              .map(Number)
+              .filter(Boolean);
             await api("POST", "/movilizaciones", {
               tipo: "recepcion_directa",
               ids,
@@ -3619,17 +3635,36 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
           }
           await marcarSincronizado(p.id);
           exitosos++;
-        } catch (_) {
-          fallidos++;
+        } catch (e) {
+          let motivo;
+          if (e.status === 401) motivo = "sesión expirada (vuelve a iniciar sesión)";
+          else if (e.status === 403) motivo = "sin permiso en el servidor";
+          else if (e.status === 422) motivo = "datos inválidos: " + (e.message || "");
+          else if (e.status >= 500) motivo = "error del servidor (" + e.status + ")";
+          else if (e.status) motivo = "HTTP " + e.status + ": " + (e.message || "");
+          else motivo = "sin conexión / red: " + (e.message || "");
+          errores.push({ id: p.id, motivo });
         }
       }
       const nuevos = await leerPendientes();
       setPendientes(nuevos);
       if (exitosos > 0) cargarHistorial();
-      showModernAlert(
-        "🔄 Sincronización",
-        `✅ ${exitosos} movimiento(s) enviados al servidor.\n${fallidos > 0 ? `⚠️ ${fallidos} fallaron (sin conexión).` : ""}`,
-      );
+      if (errores.length === 0) {
+        showModernAlert(
+          "🔄 Sincronización",
+          `✅ ${exitosos} movimiento(s) enviados al servidor.`,
+        );
+      } else {
+        const conteo = {};
+        for (const er of errores) conteo[er.motivo] = (conteo[er.motivo] || 0) + 1;
+        const detalle = Object.entries(conteo)
+          .map(([m, n]) => `• ${n}× ${m}`)
+          .join("\n");
+        showModernAlert(
+          "🔄 Sincronización",
+          `✅ ${exitosos} enviados.\n⚠️ ${errores.length} fallaron:\n${detalle}`,
+        );
+      }
     } catch (e) {
       showModernAlert("Error", "Error al sincronizar: " + e.message);
     } finally {
