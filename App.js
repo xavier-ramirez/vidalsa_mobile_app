@@ -20,6 +20,23 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SQLite from "expo-sqlite";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
+import Svg, { Path } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
+
+// Background SVG identico al de la web (resources/views/partials/background_svg.blade.php):
+// curva azul corporativa abajo + 2 acentos en esquinas derechas. preserveAspectRatio
+// xMinYMin slice mantiene el fondo cubriendo toda la pantalla en cualquier tamano.
+function BackgroundSVG() {
+  return (
+    <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }} pointerEvents="none">
+      <Svg width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMinYMin slice">
+        <Path d="M0 900 V 400 Q 150 750 600 850 T 1440 900 Z" fill="#00004d" opacity={0.92} />
+        <Path d="M1440 0 V 250 Q 1330 200 1280 0 Z" fill="#00004d" />
+        <Path d="M1440 900 V 650 Q 1380 750 1440 850 Z" fill="#00004d" opacity={0.9} />
+      </Svg>
+    </View>
+  );
+}
 
 // ─── SISTEMA DE ALERTAS MODERNAS ───
 const AlertEmitter = {
@@ -591,39 +608,72 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
             shadowRadius: 12,
           }}
         >
-          {/* Logo + usuario */}
+          {/* Logo + tarjeta de usuario con gradient (igual a la web: .mobile-user-header-compact) */}
           <View
             style={{
-              paddingHorizontal: 20,
-              paddingBottom: 16,
+              paddingHorizontal: 16,
+              paddingBottom: 14,
               marginBottom: 4,
               borderBottomWidth: 1,
               borderBottomColor: "#f1f5f9",
             }}
           >
-            <LogoVidalsa size={40} />
+            <View style={{ paddingHorizontal: 4 }}>
+              <LogoVidalsa size={40} />
+            </View>
             {user && (
-              <View
+              <LinearGradient
+                colors={["#00004d", "#0067b1"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  marginTop: 10,
-                  gap: 6,
-                  paddingRight: 10,
+                  gap: 10,
+                  paddingVertical: 8,
+                  paddingHorizontal: 10,
+                  marginTop: 12,
+                  borderRadius: 10,
                 }}
               >
-                <MaterialIcons
-                  name="account-circle"
-                  size={18}
-                  color="#64748b"
-                />
-                <Text
-                  style={{ fontSize: 13, color: "#64748b", flexShrink: 1 }}
-                  numberOfLines={1}
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "rgba(255,255,255,0.18)",
+                    borderWidth: 1.5,
+                    borderColor: "rgba(255,255,255,0.3)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  {user.name || user.email || "Usuario"}
-                </Text>
-              </View>
+                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 13 }}>
+                    {((user.name || user.email || "U").trim().charAt(0) || "U").toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text
+                    style={{ fontSize: 13, fontWeight: "700", color: "#fff" }}
+                    numberOfLines={1}
+                  >
+                    {user.name || user.email || "Usuario"}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 9,
+                      fontWeight: "800",
+                      letterSpacing: 0.5,
+                      color: "rgba(255,255,255,0.78)",
+                      textTransform: "uppercase",
+                      marginTop: 1,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {user.offline ? "Modo Offline" : (user.role || user.email || "Usuario")}
+                  </Text>
+                </View>
+              </LinearGradient>
             )}
           </View>
 
@@ -882,10 +932,10 @@ function PantallaLogin({ onLogin }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fdfbfb" }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fdfbfb" />
-      {/* Curva lateral azul — igual que la web */}
-      <View style={styles.blueCurveDashboard} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      {/* Fondo SVG identico a la web (3 curvas navy corporativo) */}
+      <BackgroundSVG />
 
       <ScrollView
         contentContainerStyle={{
@@ -4565,25 +4615,6 @@ const styles = StyleSheet.create({
   serialKey: { fontWeight: "700", color: "#4a5568" },
 
   // Premium UI Styles
-  blueCurve: {
-    position: "absolute",
-    bottom: -Dimensions.get("window").height * 0.35,
-    left: -Dimensions.get("window").width * 0.45,
-    width: Dimensions.get("window").height,
-    height: Dimensions.get("window").height,
-    borderRadius: Dimensions.get("window").height / 2,
-    backgroundColor: "#00004d",
-  },
-  blueCurveDashboard: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: -Dimensions.get("window").width * 0.25,
-    width: Dimensions.get("window").width * 0.65,
-    backgroundColor: "#00004d",
-    borderTopRightRadius: Dimensions.get("window").height * 0.4,
-    borderBottomRightRadius: Dimensions.get("window").height * 0.4,
-  },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
