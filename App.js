@@ -534,31 +534,39 @@ function TopHeader({ onOpenMenu }) {
   );
 }
 
-// Helper para ítem del menú con MaterialIcons
+// Helper para item del menu con MaterialIcons. Estado activo igual a la web
+// (.mobile-nav-link.active): bg #f0f4f8 + color navy #00004d. La web tambien
+// usa font-weight 700 / size 16px en mobile.
 function MenuItem({
   icon,
   label,
   onPress,
-  color = "#334155",
+  color = "#666666",
   subItem = false,
+  active = false,
 }) {
+  const finalColor = active ? "#00004d" : color;
   return (
     <TouchableOpacity
       onPress={onPress}
       style={[
         styles.menuItem,
         subItem && { paddingVertical: 10, paddingLeft: 4 },
+        active && { backgroundColor: "#f0f4f8" },
       ]}
       activeOpacity={0.7}
     >
       <MaterialIcons
         name={icon}
         size={subItem ? 20 : 22}
-        color={color}
+        color={finalColor}
         style={{ width: 32 }}
       />
       <Text
-        style={[styles.menuItemText, { color, fontSize: subItem ? 14 : 15 }]}
+        style={[
+          styles.menuItemText,
+          { color: finalColor, fontSize: subItem ? 14 : 16, fontWeight: "700" },
+        ]}
       >
         {label}
       </Text>
@@ -566,13 +574,20 @@ function MenuItem({
   );
 }
 
-function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
+function DrawerMenu({ visible, onClose, onNavigate, onLogout, user, currentScreen }) {
   const { width } = Dimensions.get("window");
   const [configOpen, setConfigOpen] = useState(false);
+  // Flota arranca abierto si la pantalla activa pertenece al grupo (igual web: .mobile-nav-group.active)
+  const [flotaOpen, setFlotaOpen] = useState(
+    currentScreen === "equipos" || currentScreen === "consumibles"
+  );
 
   useEffect(() => {
-    if (!visible) setConfigOpen(false);
-  }, [visible]);
+    if (!visible) {
+      setConfigOpen(false);
+      setFlotaOpen(currentScreen === "equipos" || currentScreen === "consumibles");
+    }
+  }, [visible, currentScreen]);
 
   if (!visible) return null;
   return (
@@ -679,59 +694,106 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
 
           <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
             <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
-              {/* Inicio — igual que web: "home" */}
+              {/* Inicio (= web .mobile-nav-link "home") */}
               <MenuItem
                 icon="home"
                 label="Inicio"
+                active={currentScreen === "dashboard"}
                 onPress={() => {
                   onNavigate("dashboard");
                   onClose();
                 }}
               />
 
-              {/* Vehículo — igual que web: "agriculture" */}
-              <MenuItem
-                icon="agriculture"
-                label="Vehículo"
-                onPress={() => {
-                  onNavigate("equipos");
-                  onClose();
-                }}
-              />
+              {/* Grupo Flota (= web .mobile-nav-group #mobileFlotaGroup) */}
+              <TouchableOpacity
+                onPress={() => setFlotaOpen(!flotaOpen)}
+                style={[
+                  styles.menuItem,
+                  { justifyContent: "space-between" },
+                  flotaOpen && { backgroundColor: "#f0f4f8" },
+                ]}
+                activeOpacity={0.7}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <MaterialIcons
+                    name="agriculture"
+                    size={22}
+                    color={flotaOpen ? "#00004d" : "#666666"}
+                    style={{ width: 32 }}
+                  />
+                  <Text
+                    style={[
+                      styles.menuItemText,
+                      { fontSize: 16, fontWeight: "700", color: flotaOpen ? "#00004d" : "#666666" },
+                    ]}
+                  >
+                    Flota
+                  </Text>
+                </View>
+                <MaterialIcons
+                  name={flotaOpen ? "expand-less" : "expand-more"}
+                  size={20}
+                  color="#94a3b8"
+                />
+              </TouchableOpacity>
 
-              {/* Movilizaciones — igual que web: "local-shipping" */}
+              {flotaOpen && (
+                <View style={{ paddingLeft: 8, paddingRight: 4, paddingVertical: 5 }}>
+                  <MenuItem
+                    icon="agriculture"
+                    label="Vehiculos"
+                    active={currentScreen === "equipos"}
+                    onPress={() => {
+                      onNavigate("equipos");
+                      onClose();
+                    }}
+                  />
+                  <MenuItem
+                    icon="local-gas-station"
+                    label="Consumibles"
+                    active={currentScreen === "consumibles"}
+                    onPress={onClose}
+                  />
+                </View>
+              )}
+
+              {/* Historial de Movilizaciones (= web "local_shipping") */}
               <MenuItem
                 icon="local-shipping"
-                label="Historial de Movilizaciones"
+                label="Historial Mov"
+                active={currentScreen === "movs"}
                 onPress={() => {
                   onNavigate("movs");
                   onClose();
                 }}
               />
 
-              {/* Divisor */}
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: "#f1f5f9",
-                  marginVertical: 8,
-                }}
-              />
-
-              {/* Configuraciones — igual que web: "settings" */}
+              {/* Grupo Configuraciones (= web .mobile-nav-group #mobileConfigGroup) */}
               <TouchableOpacity
                 onPress={() => setConfigOpen(!configOpen)}
-                style={[styles.menuItem, { justifyContent: "space-between" }]}
+                style={[
+                  styles.menuItem,
+                  { justifyContent: "space-between" },
+                  configOpen && { backgroundColor: "#f0f4f8" },
+                ]}
                 activeOpacity={0.7}
               >
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <MaterialIcons
                     name="settings"
                     size={22}
-                    color="#334155"
+                    color={configOpen ? "#00004d" : "#666666"}
                     style={{ width: 32 }}
                   />
-                  <Text style={styles.menuItemText}>Configuraciones</Text>
+                  <Text
+                    style={[
+                      styles.menuItemText,
+                      { fontSize: 16, fontWeight: "700", color: configOpen ? "#00004d" : "#666666" },
+                    ]}
+                  >
+                    Configuraciones
+                  </Text>
                 </View>
                 <MaterialIcons
                   name={configOpen ? "expand-less" : "expand-more"}
@@ -741,38 +803,19 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
               </TouchableOpacity>
 
               {configOpen && (
-                <View
-                  style={{
-                    marginLeft: 20,
-                    borderLeftWidth: 2,
-                    borderLeftColor: "#e2e8f0",
-                    paddingLeft: 8,
-                    marginBottom: 4,
-                  }}
-                >
-                  {/* Frentes — igual que web: "business" */}
+                <View style={{ paddingLeft: 8, paddingRight: 4, paddingVertical: 5 }}>
                   <MenuItem
                     icon="business"
                     label="Frentes de Trabajo"
                     onPress={onClose}
-                    subItem
                   />
-                  {/* Catálogo — igual que web: "menu-book" */}
                   <MenuItem
                     icon="menu-book"
-                    label="Catálogo de Modelos"
+                    label="Catalogo de Modelos"
                     onPress={onClose}
-                    subItem
                   />
                 </View>
               )}
-
-              {/* Consumibles — igual que web: "local-gas-station" */}
-              <MenuItem
-                icon="local-gas-station"
-                label="Consumibles"
-                onPress={onClose}
-              />
 
               <View style={{ height: 40 }} />
 
@@ -787,12 +830,12 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
               >
                 <MenuItem
                   icon="logout"
-                  label="Cerrar Sesión"
+                  label="Cerrar Sesion"
                   onPress={() => {
                     onClose();
                     setTimeout(onLogout, 250);
                   }}
-                  color="#ef4444"
+                  color="#a91d28"
                 />
               </View>
             </View>
@@ -1470,69 +1513,74 @@ function PantallaEquipos({ user, onOpenMenu }) {
             <MaterialIcons name="check-circle" size={24} color="#3b82f6" />
           </View>
         )}
-        {/* TOP ROW: Frente (small upper left) */}
-        <View style={{ marginBottom: 4 }}>
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: "700",
-              color: "#64748b",
-              textTransform: "uppercase",
-              letterSpacing: 0.3,
-            }}
-            numberOfLines={2}
-          >
-            {item.frente || "SIN ASIGNAR"}
-          </Text>
-        </View>
 
-        {/* BODY: image placeholder (left) + data column (right) */}
+        {/* BODY (grid web .table-equipos-mobile tr): col foto 110px + col datos.
+            Frente queda ARRIBA de la foto, NO spanning toda la card. */}
         <View
-          style={{ flexDirection: "row", gap: 18, alignItems: "flex-start" }}
+          style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}
         >
-          {/* placeholder igual al web: mas grande */}
-          <View
-            style={{
-              width: 65,
-              height: 65,
-              backgroundColor: "#f8fafc",
-              borderRadius: 6,
-              borderWidth: 1,
-              borderColor: "#e2e8f0",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <MaterialIcons
-              name="image-not-supported"
-              size={28}
-              color="#cbd5e1"
-            />
+          {/* Columna foto: frente arriba + placeholder 100x100 (= grid-col 1 / row 1-3) */}
+          <View style={{ alignItems: "center", width: 100 }}>
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "700",
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: 0.3,
+                textAlign: "center",
+                marginBottom: 4,
+              }}
+              numberOfLines={2}
+            >
+              {item.frente || "SIN ASIGNAR"}
+            </Text>
+            <View
+              style={{
+                width: 100,
+                height: 100,
+                backgroundColor: "#f8fafc",
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: "#e2e8f0",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <MaterialIcons
+                name="image-not-supported"
+                size={40}
+                color="#cbd5e1"
+              />
+            </View>
           </View>
-          {/* Datos igual al web: uno debajo del otro alineados */}
+          {/* Columna datos: TIPO / MARCA / SERIAL (= grid-col 2-3, row 1/2/3) */}
           <View style={{ flex: 1 }}>
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: "800",
                 color: "#000",
                 textTransform: "uppercase",
-                marginBottom: 2,
+                paddingBottom: 4,
+                borderBottomWidth: 1,
+                borderBottomColor: "#f1f5f9",
+                marginBottom: 4,
               }}
             >
               {item.tipo || "—"}
             </Text>
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: "800",
                 color: "#0f172a",
-                marginBottom: 1,
+                marginBottom: 2,
               }}
             >
               {item.marca || "—"}
             </Text>
-            <Text style={{ fontSize: 13, color: "#718096", marginBottom: 6 }}>
+            <Text style={{ fontSize: 13, color: "#718096", marginBottom: 4 }}>
               {item.modelo || "—"}
             </Text>
             {item.serial_chasis ? (
@@ -1560,7 +1608,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
                   fontSize: 12,
                   color: "#a0aec0",
                   fontStyle: "italic",
-                  marginVertical: 2,
+                  marginVertical: 1,
                 }}
               >
                 Sin Placa
@@ -1608,12 +1656,13 @@ function PantallaEquipos({ user, onOpenMenu }) {
             </Text>
             <MaterialIcons name="expand-more" size={18} color="#94a3b8" />
           </View>
+          {/* Boton ojo: web mobile .btn-details-mini = 36x32 navy */}
           <TouchableOpacity
             style={{
               backgroundColor: "#00004d",
-              borderRadius: 10,
-              width: 44,
-              height: 44,
+              borderRadius: 8,
+              width: 38,
+              height: 36,
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -1621,7 +1670,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
               handleVerDetalles(item);
             }}
           >
-            <MaterialIcons name="visibility" size={22} color="#fff" />
+            <MaterialIcons name="visibility" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -2646,57 +2695,60 @@ function PantallaEquipos({ user, onOpenMenu }) {
           <View style={[styles.modalContainer, { maxHeight: "92%" }]}>
             {equipoSel && (
               <>
-                {/* Header azul oscuro: CASILLERO + Placa / Serial (igual que la web) */}
+                {/* Header navy: TIPO en uppercase + "Placa - Serial" (= web modal_equipo_title/subtitle) */}
                 <View
                   style={{
                     backgroundColor: "#00004d",
-                    paddingHorizontal: 22,
-                    paddingVertical: 20,
-                    borderTopLeftRadius: 20,
-                    borderTopRightRadius: 20,
+                    paddingHorizontal: 20,
+                    paddingVertical: 12,
+                    borderTopLeftRadius: 16,
+                    borderTopRightRadius: 16,
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "flex-start",
+                    gap: 8,
                   }}
                 >
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text
                       style={{
                         color: "#fff",
-                        fontSize: 20,
-                        fontWeight: "900",
-                        letterSpacing: 0.5,
+                        fontSize: 17,
+                        fontWeight: "700",
+                        textTransform: "uppercase",
+                        lineHeight: 20,
                       }}
+                      numberOfLines={2}
                     >
-                      CASILLERO
+                      {equipoSel.tipo || "Equipo"}
                     </Text>
                     <Text
                       style={{
                         color: "rgba(255,255,255,0.8)",
-                        fontSize: 13,
-                        marginTop: 4,
+                        fontSize: 12,
+                        marginTop: 2,
                       }}
+                      numberOfLines={2}
                     >
-                      Placa: {equipoSel.placa || "S/P"} - Serial:{" "}
-                      {equipoSel.serial_chasis || "S/S"}
+                      {[
+                        equipoSel.placa && equipoSel.placa !== "S/P" ? `Placa: ${equipoSel.placa}` : null,
+                        equipoSel.serial_chasis ? `Serial: ${equipoSel.serial_chasis}` : null,
+                      ].filter(Boolean).join(" - ") || "Sin datos"}
                     </Text>
                   </View>
+                  {/* Boton X circular blanco translucido (= web close button) */}
                   <TouchableOpacity
                     onPress={() => setModalVisible(false)}
                     style={{
-                      backgroundColor: "rgba(255,255,255,0.15)",
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                      width: 30,
+                      height: 30,
+                      borderRadius: 15,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <Text
-                      style={{ color: "#fff", fontSize: 18, lineHeight: 20 }}
-                    >
-                      ✕
-                    </Text>
+                    <MaterialIcons name="close" size={18} color="#fff" />
                   </TouchableOpacity>
                 </View>
 
@@ -4512,6 +4564,7 @@ export default function App() {
         onNavigate={setActiveTab}
         onLogout={handleLogout}
         user={user}
+        currentScreen={activeTab}
       />
 
       <View style={{ flex: 1 }}>
