@@ -854,8 +854,6 @@ function PantallaLogin({ onLogin }) {
   const [descargando, setDescargando] = useState(false);
   const [ultimaSync, setUltimaSync] = useState("");
   const [conteoLocal, setConteoLocal] = useState(0);
-  const [serverIp, setServerIp] = useState("");
-  const [mostrarIp, setMostrarIp] = useState(false);
   const [mostrarFormLogin, setMostrarFormLogin] = useState(false);
 
   useEffect(() => {
@@ -867,27 +865,10 @@ function PantallaLogin({ onLogin }) {
       }
       const equipos = await leerEquiposLocal();
       setConteoLocal(equipos.length);
-      const ip = await AsyncStorage.getItem("server_ip");
-      if (ip) setServerIp(ip);
-      else setServerIp(DEFAULT_SERVER);
       // Si NO hay datos locales, mostrar formulario de login directamente
       if (equipos.length === 0) setMostrarFormLogin(true);
     })();
   }, []);
-
-  const guardarIp = async () => {
-    const ipLimpia = serverIp.trim().replace(/\/+$/, "");
-    if (!ipLimpia) {
-      showModernAlert("Error", "Escribe una IP o dirección válida.");
-      return;
-    }
-    await AsyncStorage.setItem("server_ip", ipLimpia);
-    setMostrarIp(false);
-    showModernAlert(
-      "✅ Guardado",
-      `Servidor configurado: ${ipLimpia}\n\nAhora intenta descargar los datos.`,
-    );
-  };
 
   const descargarDatos = async () => {
     setDescargando(true);
